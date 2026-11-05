@@ -26,7 +26,7 @@
 3. **零個人資料同步**：跨系統只准傳 `SCOUT ID`、項目代號及日期；伺服器端必須硬性剝除姓名、電話、地址、家長／監護人資料、相片及任何其他成員紀錄。`pendingRequests` **永不**錄入 BOOK。
 4. **不可自我核實**：BOOK 送出的進度只可經 `requestComplete` 變成 `status: 'pending'`；`save`／`saveOtherBadge`／`reviewRequest` 一律回 `403`；只有領袖在 BADGE 內按 CONFIRM 才算完成。
 5. **版權擺位僅三處**：封面頁腳 `LegalLine`、數位附錄 `LegalNote`、選單「關於」`LegalNote`。其餘頁面、列印及表格不得重複。
-6. **童軍綠是主色，且對比不可退讓**：封面為綠布面（`#0e3a23 → #175c34`），**金字（`#d8b871`）只准配深綠 `#0e3a23`（6.68:1）**，中綠 `#175c34` 只配象牙白字 `#f7f2e7`（7.19:1）；內頁綠墨標題 `#123420` 配象牙紙（12.23:1）。中英文完全分開，一鍵切換，不得並排塞入同一表格。
+6. **童軍綠是主色，且對比不可退讓**：封面為綠布面（`#143b28 → #08180f`），**金字（`#f6e6bb`）只准配深綠 `#143b28`（10.06:1）**；內頁綠墨標題 `#1c5236` 配象牙紙 `#f7f2e7`（8.14:1）；金底按鈕一律用深炭字 `#1a1206`（10.67:1）。中英文完全分開，一鍵切換，不得並排塞入同一表格。色值以 `web/src/styles.css` 實裝為準，改動必須同步重算 `docs/design-review.md`。
 7. **項目 ID 單一真相**：任何 `L1-*`…`L5-*`、`SC-*-*` 的改動必須先在 `scoutbadge/data/items.json` 落地，再執行 `npm run syllabus`，並更新 `tests/fixtures/scoutbadge-ids.json`；測試會以 sha256 與清單鎖死。BOOK 內部鍵＝官方編號原文，不得另起映射。
 8. **雙重版本號（V）與體積預算（S7 / G11）**：任何可見更新須同步遞增 `package.json`、`web/index.html`（`meta[name="app-version"]`、`window.APP_VERSION`）、`shared/book.js`（`APP_VERSION`）及 `CHANGELOG.md`；`dist/` 總體積須 `< 5 MB`，`web/public/icons/` 9 個圖示總和須 `<= 260 KB`。
 9. **禁止在 `.js/.mjs/.jsx` 寫 `// v1.0` 行內版本註解（F15）**：版本號只寫在常數、HTML meta 與 `CHANGELOG.md`。
@@ -48,7 +48,7 @@ node scripts/preflight_v1.0.mjs .
 | 想改 | 改哪裡 | 之後要跑 |
 | :--- | :--- | :--- |
 | 綱要項目／專科徽章 | `scoutbadge/data/items.json`（上游） | `npm run syllabus && npm test` |
-| 內頁版面 | `web/src/pages/Book{Front,Training,Back}.jsx` | `npm test`（頁數契約） |
+| 內頁版面 | `web/src/pages/Book{Front,Training,Skills,L5,Back}.jsx` | `npm test`（頁數契約） |
 | 樣式／配色 | `web/src/styles.css`（`--cover-bg`、`--scout-green`、`--foil`） | `npm test`（WCAG 契約） |
 | 表格欄位 | `shared/forms.js` + `web/src/pages/Forms.jsx` | `npm test` |
 | 二維碼格式 | `shared/transfer.js` | `npm test`（`SB1`／`SB1S` 契約） |
