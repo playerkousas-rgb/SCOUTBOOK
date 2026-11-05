@@ -5,10 +5,10 @@
 ## [Unreleased]
 
 ### 待辦（Todo；真機及紙本核實）
-- 真機三寬度實測（390／768／1440）及列印實測（見 `docs/design-review.md` ROUND 2）。
-- 核實：紙本《童軍紀錄冊》頁序覆核（現為 66 頁自創工作版本）、`SCOUTBADGE_ORIGIN` 預設值、scoutbadge 後端配合事項。
+- 真機三寬度實測（390／768／1440）及列印實測（見 `docs/design-review.md` ROUND 2）—— 仍未測，不作聲稱。
+- 核實：`SCOUTBADGE_ORIGIN` 預設值、scoutbadge 後端配合事項。
 
-## [Unreleased] v2.0.0 骨架（官方 110 頁）
+## [v2.0.0] - 2026-11-06
 
 ### 新增（Added）
 - `shared/officialPages.js`：官方 1–110 頁藍本（群組／種別／獎章分頁／複示／實圖／紀錄欄）。
@@ -24,8 +24,10 @@
 - 刪舊頁面模組 BookFront／BookTraining／BookSkills／BookL5／BookBack；OtherBadgeTable 搬入 components；誓詞正文只留官方第 9 頁。
 - 測試 42/42。
 
-### 待辦（Todo）
-- v2.0.0 收尾：版本號＋文件＋發佈。
+### 變更（Changed）
+- 整冊改為官方頁碼：`p001`–`p110` 逐頁對應紙本 1–110，刪除自創 66 頁工作版本；路由 `/p/p001`。
+- 進度總覽改列全部追蹤獎章（含全文／專科／AYP 旁支），`badgeStats` 仍只計五大獎章，`scoutbadge` 同步範圍不變。
+- 附錄頁面合併：卷首語／制服／總覽／說明／工具／版權聲明同在一頁，數據路徑 `pages.p63`–`p65` 原位保留（舊書零遷移）。
 
 ## [v1.2.0] - 2026-11-05
 
