@@ -1018,6 +1018,382 @@ export const BADGE_SYLLABUS = [
   }
 ];
 
+/**
+ * 全文獎章：領導才／服務／先修／宗教／社區（紙本 p83–p90、p102–p103 全文）。
+ * 紙本專有獎章，scoutbadge 綱要無收錄：進度只存本機，不參與 scoutbadge 同步
+ * （SYLLABUS_ITEMS／ITEM_INDEX／SYLLABUS_META 維持 75 項不變，見測試「單一真相」）。
+ * 細項名及考驗內容照紙本事實壓縮，不貼 PDF 原文整段。
+ */
+export const SPOTLIGHT_AWARDS = [
+  {
+    "id": "OT-LD",
+    "badgeKey": "OT-LD",
+    "icon": "🎖️",
+    "name": "領導才獎章",
+    "en": "Leadership Award",
+    "color": "#1B5E20",
+    "purpose": "適合十三至十五歲之童軍成員，透過小隊職務及事工計劃鍛鍊領導才",
+    "purposeEn": "For Scouts aged 13 to 15; develop leadership through patrol duties and projects",
+    "description": "適合十三至十五歲之童軍成員",
+    "descriptionEn": "For Scouts between the age of 13 to 15",
+    "itemLabel": "進度項目",
+    "itemLabelEn": "Progress Items",
+    "segments": [
+      {
+        "code": "OT-LD-A",
+        "name": "領導才獎章項目",
+        "en": "Leadership Award Items",
+        "items": [
+          {
+            "id": "OT-LD-A1",
+            "badgeId": "OT-LD-A1",
+            "name": "進度性獎章基礎",
+            "en": "Progressive Badge Basis",
+            "detail": "考獲童軍探索獎章或以上之進度性獎章。",
+            "detailEn": "Obtain the Scout Pathfinder Award or above.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p83"
+          },
+          {
+            "id": "OT-LD-A2",
+            "badgeId": "OT-LD-A2",
+            "name": "小隊長會議",
+            "en": "Patrol Leaders' Council",
+            "detail": "闡述小隊長會議功能，出席最少一次會議及執行一項議決案。",
+            "detailEn": "Explain the functions of the Patrol Leaders' Council, attend one meeting and implement one resolution.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p83"
+          },
+          {
+            "id": "OT-LD-A3",
+            "badgeId": "OT-LD-A3",
+            "name": "個人事工計劃",
+            "en": "Personal Leadership Project",
+            "detail": "完成一個個人領導事工計劃。",
+            "detailEn": "Complete a personal leadership project.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p84"
+          },
+          {
+            "id": "OT-LD-A4",
+            "badgeId": "OT-LD-A4",
+            "name": "組織小隊集會",
+            "en": "Organise a Patrol Meeting",
+            "detail": "二選一：組織一個小隊戶內集會，或組織一個小隊戶外集會。",
+            "detailEn": "Either: organise an indoor Patrol meeting, or organise an outdoor Patrol meeting.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p84"
+          },
+          {
+            "id": "OT-LD-A5",
+            "badgeId": "OT-LD-A5",
+            "name": "指導童軍技能",
+            "en": "Instruct Scoutcraft",
+            "detail": "二選一：指導一個進度章內其中三個童軍技能項目；或指導一名或以上童軍考獲一個專科徽章。",
+            "detailEn": "Either: assist 3 scoutcraft items in any progressive training badge; or assist at least one Scout to obtain a proficiency badge.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p84-85"
+          },
+          {
+            "id": "OT-LD-A6",
+            "badgeId": "OT-LD-A6",
+            "name": "領導才訓練班",
+            "en": "Leadership Training Course",
+            "detail": "完成一個領導才訓練班。",
+            "detailEn": "Complete a Leadership Training Course.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p85"
+          },
+          {
+            "id": "OT-LD-A7",
+            "badgeId": "OT-LD-A7",
+            "name": "小隊職務",
+            "en": "Patrol Appointment",
+            "detail": "二選一：擔任一個小隊職務六個月以上；或類似性質及相若程度之領導才活動。",
+            "detailEn": "Either: accept a Patrol appointment for at least 6 months; or a leadership activity of the same level.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p85"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "OT-SF",
+    "badgeKey": "OT-SF",
+    "icon": "🎖️",
+    "name": "服務獎章",
+    "en": "Service Flash",
+    "color": "#2E7D32",
+    "purpose": "嘉許持續服務：先備專科徽章，再完成為期三個月以上之服務",
+    "purposeEn": "Recognise sustained service: earn the badges first, then serve for 3+ months",
+    "description": "須先考獲童軍標準獎章或以上之進度性徽章",
+    "descriptionEn": "Obtain the Scout Standard Award or above first",
+    "itemLabel": "進度項目",
+    "itemLabelEn": "Progress Items",
+    "segments": [
+      {
+        "code": "OT-SF-A",
+        "name": "服務獎章項目",
+        "en": "Service Flash Items",
+        "items": [
+          {
+            "id": "OT-SF-A1",
+            "badgeId": "OT-SF-A1",
+            "name": "進度性徽章基礎",
+            "en": "Progressive Badge Basis",
+            "detail": "考獲童軍標準獎章或以上之進度性徽章。",
+            "detailEn": "Obtain the Scout Standard Award or above.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p86"
+          },
+          {
+            "id": "OT-SF-A2",
+            "badgeId": "OT-SF-A2",
+            "name": "服務專章",
+            "en": "Service Badges",
+            "detail": "考獲一個服務組專章及一個服務性質之專科徽章。",
+            "detailEn": "Obtain a proficiency badge (Service) and one service-related proficiency badge.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p86"
+          },
+          {
+            "id": "OT-SF-A3",
+            "badgeId": "OT-SF-A3",
+            "name": "教導或服務專章",
+            "en": "Instructor or Service Badge",
+            "detail": "考獲一個教導組或指定服務組專章。",
+            "detailEn": "Obtain a proficiency badge (Instructor) or a designated proficiency badge (Service).",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p86"
+          },
+          {
+            "id": "OT-SF-A4",
+            "badgeId": "OT-SF-A4",
+            "name": "三個月服務",
+            "en": "Three-month Service",
+            "detail": "參與一個為期三個月以上之服務。",
+            "detailEn": "Participate in a service for at least 3 months.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p87"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "OT-VS",
+    "badgeKey": "OT-VS",
+    "icon": "⚜️",
+    "name": "深資童軍先修章",
+    "en": "Venture Scout Link Badge",
+    "color": "#33691E",
+    "purpose": "年滿十四歲半之童軍支部成員，銜接深資童軍支部",
+    "purposeEn": "For Scouts aged 14.5; bridge to the Venture Scout Section",
+    "description": "年滿十四歲半之童軍支部成員",
+    "descriptionEn": "For Scouts who are 14.5 years old",
+    "itemLabel": "進度項目",
+    "itemLabelEn": "Progress Items",
+    "segments": [
+      {
+        "code": "OT-VS-A",
+        "name": "先修章項目",
+        "en": "Link Badge Items",
+        "items": [
+          {
+            "id": "OT-VS-A1",
+            "badgeId": "OT-VS-A1",
+            "name": "支部目的及方法",
+            "en": "Aim and Method",
+            "detail": "說出深資童軍支部的目的、方法及預期成果。",
+            "detailEn": "State the aim, the method and expected outcomes of the Venture Scout Section.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p88"
+          },
+          {
+            "id": "OT-VS-A2",
+            "badgeId": "OT-VS-A2",
+            "name": "深資童軍制服",
+            "en": "Venture Scout Uniform",
+            "detail": "認識深資童軍制服。",
+            "detailEn": "Learn about the Venture Scout uniform.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p88"
+          },
+          {
+            "id": "OT-VS-A3",
+            "badgeId": "OT-VS-A3",
+            "name": "獎章組別及範圍",
+            "en": "Award Sections",
+            "detail": "明瞭深資童軍獎章及榮譽童軍獎章之四個考驗組別及考驗範圍。",
+            "detailEn": "Understand the 4 sections of the Venture Scout Award and the Dragon Scout Award and their requirements.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p88"
+          },
+          {
+            "id": "OT-VS-A4",
+            "badgeId": "OT-VS-A4",
+            "name": "與其他機構互關",
+            "en": "Links with Other Bodies",
+            "detail": "明瞭深資童軍獎章及榮譽童軍獎章與其他機構互相關連的地方。",
+            "detailEn": "Understand the relationship between the Venture Scout Award and the Dragon Scout Award and other organisations.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p89"
+          },
+          {
+            "id": "OT-VS-A5",
+            "badgeId": "OT-VS-A5",
+            "name": "執行委員會功能",
+            "en": "Executive Committee",
+            "detail": "說出執行委員會之基本功能、組織及委員的職責。",
+            "detailEn": "State the functions and composition of the Executive Committee and the roles of individual members.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p89"
+          },
+          {
+            "id": "OT-VS-A6",
+            "badgeId": "OT-VS-A6",
+            "name": "執委會產生方法",
+            "en": "Forming the Committee",
+            "detail": "明瞭執行委員會之產生方法。",
+            "detailEn": "Understand the methods of forming an Executive Committee.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p89"
+          },
+          {
+            "id": "OT-VS-A7",
+            "badgeId": "OT-VS-A7",
+            "name": "領袖的角色",
+            "en": "Role of Leaders",
+            "detail": "明瞭執行委員會中領袖的角色。",
+            "detailEn": "Understand the role of leaders in the Executive Committee.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p89"
+          },
+          {
+            "id": "OT-VS-A8",
+            "badgeId": "OT-VS-A8",
+            "name": "多元深資活動",
+            "en": "Variety of Activities",
+            "detail": "認識多元化的深資童軍活動。",
+            "detailEn": "Recognise the variety of activities available in Venture Scouting.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p89"
+          },
+          {
+            "id": "OT-VS-A9",
+            "badgeId": "OT-VS-A9",
+            "name": "參與深資活動",
+            "en": "Join VS Activities",
+            "detail": "參加最少兩次具深資童軍支部特色之活動。",
+            "detailEn": "Participate in at least 2 Venture Scout activities.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p90"
+          },
+          {
+            "id": "OT-VS-A10",
+            "badgeId": "OT-VS-A10",
+            "name": "列席執委會議",
+            "en": "Attend Exco Meeting",
+            "detail": "參加最少一次深資童軍執行委員會會議。",
+            "detailEn": "Participate in at least 1 Venture Scout Executive Committee meeting.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p90"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "OT-RG",
+    "badgeKey": "OT-RG",
+    "icon": "🕊️",
+    "name": "宗教章",
+    "en": "Religious Badge",
+    "color": "#558B29",
+    "purpose": "完成六個宗教課程其中一項",
+    "purposeEn": "Complete any one of the six religious courses",
+    "description": "完成下列其中一項宗教課程",
+    "descriptionEn": "Complete any one of the following",
+    "itemLabel": "進度項目",
+    "itemLabelEn": "Progress Items",
+    "segments": [
+      {
+        "code": "OT-RG-A",
+        "name": "宗教章項目",
+        "en": "Religious Badge Items",
+        "items": [
+          {
+            "id": "OT-RG-A1",
+            "badgeId": "OT-RG-A1",
+            "name": "宗教課程（六選一）",
+            "en": "Religious Course (any one of six)",
+            "detail": "完成下列其中一項：天主教課程、孔教課程、伊斯蘭教課程、佛教課程、基督教課程、道教課程。",
+            "detailEn": "Complete any one of: Catholicism, Confucianism, Islam, Buddhism, Christianity, Taoist.",
+            "options": ["天主教", "孔教", "伊斯蘭教", "佛教", "基督教", "道教"],
+            "optionsEn": ["Catholicism", "Confucianism", "Islam", "Buddhism", "Christianity", "Taoist"],
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p102"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "OT-CM",
+    "badgeKey": "OT-CM",
+    "icon": "🤝",
+    "name": "社區參與章",
+    "en": "Community Involvement Badge",
+    "color": "#7CB342",
+    "purpose": "透過認許專章、講座及公民章參與社區",
+    "purposeEn": "Serve the community via recognised badges, seminars and the Civics Badge",
+    "description": "完成三項認許要求",
+    "descriptionEn": "Complete the three recognised requirements",
+    "itemLabel": "進度項目",
+    "itemLabelEn": "Progress Items",
+    "segments": [
+      {
+        "code": "OT-CM-A",
+        "name": "社區參與章項目",
+        "en": "Community Involvement Badge Items",
+        "items": [
+          {
+            "id": "OT-CM-A1",
+            "badgeId": "OT-CM-A1",
+            "name": "認許專章／獎章",
+            "en": "Recognised Badge / Award",
+            "detail": "考獲一個認許專章或獎章。",
+            "detailEn": "Obtain a recognised proficiency badge or award.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p103"
+          },
+          {
+            "id": "OT-CM-A2",
+            "badgeId": "OT-CM-A2",
+            "name": "認許講座／工作坊",
+            "en": "Recognised Seminar / Workshop",
+            "detail": "出席一個認許專題講座或工作坊。",
+            "detailEn": "Attend a recognised seminar or workshop.",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p103"
+          },
+          {
+            "id": "OT-CM-A3",
+            "badgeId": "OT-CM-A3",
+            "name": "公民章（服務組）",
+            "en": "Civics Badge (Service)",
+            "detail": "考獲公民章（服務組）。",
+            "detailEn": "Obtain the Civics Badge (Service).",
+            "assessedBy": "member",
+            "sourceUrl": "scout-record-book_20260829.pdf p103"
+          }
+        ]
+      }
+    ]
+  }
+];
+
 /** 專科徽章：SC-INT/PUR/SER/INS/SEA/AIR/OTH-*（單一完成紀錄：日期＋證書編號） */
 export const OTHER_BADGES = [
   {
@@ -3151,6 +3527,12 @@ export const SAFE_FROM_HARM_EN = {
 
 export const ALL_AWARDS = [...BADGE_SYLLABUS];
 
+/**
+ * 本機追蹤的全部獎章（進度性 L1–L5 ＋ 紙本全文 OT-*）。
+ * 只有 ALL_AWARDS（75 項）參與 scoutbadge 同步；OT-* 只存本機。
+ */
+export const ALL_TRACKED_AWARDS = [...ALL_AWARDS, ...SPOTLIGHT_AWARDS];
+
 /** 所有細項（L1–L5） */
 export const SYLLABUS_ITEMS = ALL_AWARDS.flatMap((badge) =>
   badge.segments.flatMap((segment) =>
@@ -3198,10 +3580,10 @@ export function isKnownItem(id) {
   return Boolean(key) && (Boolean(ITEM_INDEX[key]) || OTHER_BADGES.some((b) => b.id === key));
 }
 
-/** 給定 BOOK 鍵，找回獎章群組（L1–L5 / 專科徽章）。 */
+/** 給定 BOOK 鍵，找回獎章群組（L1–L5 / OT-* 全文獎章 / 專科徽章）。 */
 export function awardOfItem(id) {
   const key = norm(id);
-  const badge = ALL_AWARDS.find((b) => b.segments.some((s) => s.items.some((i) => i.id === key)));
+  const badge = ALL_TRACKED_AWARDS.find((b) => b.segments.some((s) => s.items.some((i) => i.id === key)));
   if (badge) return badge;
   return OTHER_BADGES.find((b) => b.id === key) || null;
 }

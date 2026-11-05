@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { APP_VERSION, PAGE_TOTAL, SECTIONS, PRINT_PAGES } from '../shared/book.js';
+import { APP_VERSION, AWARD_ART, PAGE_TOTAL, SECTIONS, PRINT_PAGES } from '../shared/book.js';
 import leaderHandler from '../api/leader.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,14 +51,18 @@ function callLeaderApi(method, body, envCode) {
   return { status, payload };
 }
 
-test('66 頁紙本 + 目錄 + 數位附錄全部映射於 App.jsx，並可整本列印', () => {
-  assert.equal(PAGE_TOTAL, 66);
-  assert.equal(SECTIONS.filter((s) => !s.digital).length, 66);
-  assert.equal(PRINT_PAGES.length, 66);
+test('110 頁官方紙本 + 目錄 + 數位附錄全部映射於 App.jsx，並可整本列印', () => {
+  assert.equal(PAGE_TOTAL, 110);
+  assert.equal(SECTIONS.filter((s) => !s.digital).length, 110);
+  assert.equal(PRINT_PAGES.length, 110);
 
   const app = read('web/src/App.jsx');
-  for (const sec of SECTIONS) {
-    assert.match(app, new RegExp(`\\b${sec.id}\\s*:`), `App.jsx 缺少 ${sec.id} 路由`);
+  // 110 頁由 OFFICIAL_PAGES 數據驅動，不再逐頁手寫路由
+  assert.ok(app.includes('OFFICIAL_PAGES'));
+  assert.ok(app.includes('Object.fromEntries(OFFICIAL_PAGES.map'));
+  assert.ok(app.includes('makePaperRoute'));
+  for (const legacy of ['BookFront', 'BookTraining', 'BookSkills', 'BookL5']) {
+    assert.equal(app.includes(legacy), false, `App 不得再引用舊頁面模組 ${legacy}`);
   }
   assert.match(app, /\bcontents\s*:/);
   assert.match(app, /\bprint\b/);
@@ -73,10 +77,11 @@ test('66 頁紙本 + 目錄 + 數位附錄全部映射於 App.jsx，並可整本
     assert.ok(formsPage.includes(`'${formId}'`) || formsPage.includes(`"${formId}"`), `Forms.jsx 缺少 ${formId}`);
   }
 
-  // 五個頁面模組齊備，合共 66 個 Page 匯出
-  const modules = ['BookFront', 'BookTraining', 'BookSkills', 'BookL5', 'BookBack'].map((m) => read(`web/src/pages/${m}.jsx`));
-  const exported = modules.join('\n').match(/export function P\d\d\b/g) || [];
-  assert.equal(exported.length, 66);
+  // PaperBook 匯出通用渲染器及數據驅動目錄
+  const paper = read('web/src/pages/PaperBook.jsx');
+  assert.ok(paper.includes('export function PaperPage'));
+  assert.ok(paper.includes('export function ContentsPage'));
+  assert.ok(paper.includes('OFFICIAL_GROUPS'));
 });
 
 test('版權與非官方聲明只出現於封面頁腳、數位附錄、選單「關於」三處', () => {
@@ -104,7 +109,7 @@ test('版權與非官方聲明只出現於封面頁腳、數位附錄、選單�
   ]);
 
   // 內頁、目錄、列印及表格不得重複版權聲明
-  for (const rel of ['web/src/pages/Welcome.jsx', 'web/src/components/Paper.jsx', 'web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/Forms.jsx', 'web/src/pages/Scan.jsx']) {
+  for (const rel of ['web/src/pages/Welcome.jsx', 'web/src/components/Paper.jsx', 'web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/Forms.jsx', 'web/src/pages/Scan.jsx']) {
     assert.ok(!/Legal(Line|Note)/.test(read(rel)), `${rel} 不得重複版權聲明`);
   }
 });
@@ -167,16 +172,18 @@ test('官方徽章實圖：official/ 七圖齊備且已接入封面／獎章頁�
     const head = fs.readFileSync(path.join(root, 'web/public/official', f)).subarray(0, 4);
     assert.deepEqual([...head], [0x89, 0x50, 0x4e, 0x47], `${f} 不是真 PNG`);
   }
+  assert.deepEqual(Object.keys(AWARD_ART).sort(), ['L1', 'L2', 'L3', 'L4', 'L5']);
+  for (const art of Object.values(AWARD_ART)) {
+    assert.match(art.src, /^\/official\/.*\.png$/);
+    assert.ok(art.zh.length > 0 && art.en.length > 0);
+  }
   const cover = read('web/src/pages/CoverPage.jsx');
-  const training = read('web/src/pages/BookTraining.jsx');
-  const l5 = read('web/src/pages/BookL5.jsx');
+  const paper = read('web/src/pages/PaperBook.jsx');
   const back = read('web/src/pages/BookBack.jsx');
   assert.ok(cover.includes('/official/membership-emblem.png'), '封面未用會員章實圖');
-  assert.ok(training.includes('/official/membership-emblem.png'), '會員章頁未用實圖');
-  assert.ok(training.includes('/official/badge-pathfinder.png'), '探索獎章頁未用實圖');
-  assert.ok(training.includes('/official/badge-standard.png'), '標準獎章頁未用實圖');
-  assert.ok(training.includes('/official/badge-advanced.png'), '高級獎章頁未用實圖');
-  assert.ok(l5.includes('/official/badge-csa.png'), '總領袖獎章頁未用實圖');
+  assert.ok(paper.includes('AWARD_ART'), '獎章頁未用官方圖表');
+  assert.ok(paper.includes('<AwardArt'), '獎章頁未渲染實圖');
+  assert.ok(paper.includes('routechain'), '途徑頁未用徽章圖');
   assert.ok(back.includes('/official/uniform-zh.png') && back.includes('/official/uniform-en.png'), '制服頁未用中英圖版');
   assert.ok(back.includes('UNIFORM_LEGEND'), '制服頁缺少 22 項圖例');
 });
@@ -248,7 +255,7 @@ test('中英文完全分離：一鍵切換、不以並排方式塞入表格', ()
   assert.ok(css.includes('data-lang'), 'styles.css 需按語言切換排版');
 
   // 內頁不得把中英並列寫死於同一字串（例如「日期 Date」）
-  for (const rel of ['web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx', 'web/src/pages/CoverPage.jsx']) {
+  for (const rel of ['web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/CoverPage.jsx']) {
     const src = read(rel);
     for (const bad of ['日期 Date', '由 From', '或 OR', '所選項目 Selected Item', '姓名 Name']) {
       assert.equal(src.includes(bad), false, `${rel} 出現中英並列字串「${bad}」`);
@@ -264,6 +271,12 @@ test('中英文完全分離：一鍵切換、不以並排方式塞入表格', ()
   assert.ok(back.includes('On my honour, I promise that I will do my best'));
   // 同一頁不可把中英文串接成一行
   assert.ok(!back.includes('誓詞 Promise'));
+  // v2 官方第 9 頁（PaperBook）：誓詞與規律中英分開呈現
+  const paper = read('web/src/pages/PaperBook.jsx');
+  assert.ok(paper.includes('我願以信譽為誓'));
+  assert.ok(paper.includes('童軍信用為人敬'));
+  assert.ok(paper.includes('On my honour, I promise that I will do my best'));
+  assert.ok(!paper.includes('誓詞 Promise'));
 });
 
 test('圖示全套 9 個 + 根目錄 favicon、manifest 與 Service Worker 一致', () => {

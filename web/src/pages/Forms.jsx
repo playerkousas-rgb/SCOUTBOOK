@@ -158,7 +158,7 @@ export function FormsIndex() {
           </p>
         </div>
         <div className="formsindex__btns">
-          <Link to="/p/p34" className="btn btn--ghost btn--sm">
+          <Link to="/p/p060" className="btn btn--ghost btn--sm">
             <Icon name="back" size={14} /> {isEn ? 'Back to Book' : '返回紀錄冊'}
           </Link>
           <Link to="/forms/all" className="btn btn--gold btn--sm">

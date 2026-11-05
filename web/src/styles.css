@@ -4402,3 +4402,19 @@ html[data-print-preview] .write--multi.is-empty {
   .uniform__legend { columns: 3; font-size: 8.5px; }
   .uniform__plate { max-width: 420px; }
 }
+
+/* v2 官方頁：要點表／規律／途徑鏈 */
+.dots { margin: 0.6em 0; padding-left: 1.3em; line-height: 1.75; }
+.dots li { margin: 0.15em 0; }
+.dots a { color: var(--scout-green); }
+.laws { margin: 0.6em 0; padding-left: 1.6em; line-height: 1.8; }
+.laws em { display: block; font-size: 0.85em; opacity: 0.75; }
+.pagelinks { display: flex; flex-wrap: wrap; gap: 0.5em; margin: 0.8em 0; }
+.promise { border-left: 4px solid var(--scout-green); padding: 0.2em 0 0.2em 1em; margin: 0.8em 0; }
+.promise p { margin: 0.3em 0; font-size: 1.08em; }
+.promise__en { font-size: 0.85em; opacity: 0.8; }
+.routechain { display: flex; flex-direction: column; align-items: center; gap: 0.1em; margin: 1em 0; }
+.routechain__step { display: flex; align-items: center; gap: 0.7em; border: 2px solid var(--scout-green); border-radius: 12px; padding: 0.45em 1em; min-width: 15em; background: #fff; color: var(--scout-green); font-weight: 700; }
+.routechain__step img { width: 44px; height: 44px; object-fit: contain; mix-blend-mode: multiply; }
+.routechain__arrow { color: var(--scout-green); font-weight: 700; }
+.tocsum__card--spot { border-style: dashed; }

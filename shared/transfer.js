@@ -77,7 +77,7 @@ export const TRANSFER_OPTIONS = [
   },
 ];
 
-const AWARD_PAGES = ['L1', 'L2', 'L3', 'L4', 'L5'];
+const AWARD_PAGES = ['L1', 'L2', 'L3', 'L4', 'L5']; // OT-* 全文獎章只存本機，不送 scoutbadge
 
 const clean = (v) => (typeof v === 'string' ? v.trim() : '');
 const pick = (obj, keys) => {
@@ -151,7 +151,7 @@ export function buildPayload(book, selection = []) {
     payload.otherBadges = other;
   }
   if (chosen.has('renewals')) {
-    const renewals = (book?.renewals || [])
+    const renewals = (book?.pages?.p006?.rows?.length ? book.pages.p006.rows : book?.renewals || [])
       .map((r) => pick(r, ['date', 'validUntil', 'note', 'leaderName']))
       .filter((r) => Object.keys(r).length > 0);
     if (renewals.length) payload.renewals = renewals;
@@ -163,7 +163,7 @@ export function buildPayload(book, selection = []) {
       if (Object.keys(row).length) awards[id] = row;
     });
     if (Object.keys(awards).length) payload.awards = awards;
-    const invest = pick(book?.pages?.p26 || {}, ['investitureDate', 'membershipDate', 'investingLeader']);
+    const invest = pick(book?.pages?.p014 || book?.pages?.p26 || {}, ['investitureDate', 'membershipDate', 'investingLeader']);
     if (Object.keys(invest).length) payload.investiture = invest;
   }
   if (chosen.has('signatures')) {

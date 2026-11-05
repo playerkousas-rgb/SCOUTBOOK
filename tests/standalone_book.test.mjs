@@ -80,9 +80,9 @@ test('BOOK 核心功能完全不需要 BADGE：無網絡亦能建立、填寫、
   // 本地簽名不等於 scoutbadge 已核實，這個欄位永遠不會被離線流程寫成 true
   assert.equal(applied.book.progress['L2-A2'].confirmedByBadge ?? false, false);
 
-  // 6. 整本列印頁序固定 66 頁，附錄不列印
-  assert.equal(PRINT_PAGES.length, 66);
-  assert.deepEqual(PRINT_PAGES.map((p) => p.id).slice(0, 3), ['p01', 'p02', 'p03']);
+  // 6. 整本列印頁序固定 110 頁，附錄不列印
+  assert.equal(PRINT_PAGES.length, 110);
+  assert.deepEqual(PRINT_PAGES.map((p) => p.id).slice(0, 3), ['p001', 'p002', 'p003']);
 
   // 7. 備份／還原（純 JSON，經 localStorage 或檔案）
   const backup = JSON.parse(JSON.stringify(book));

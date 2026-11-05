@@ -6,14 +6,20 @@ import {
   PAGE_TOTAL,
   PRINT_PAGES,
   SECTIONS,
+  OFFICIAL_PAGES,
+  OFFICIAL_GROUPS,
   ALL_AWARDS,
+  ALL_TRACKED_AWARDS,
+  SPOTLIGHT_AWARDS,
   BADGE_SYLLABUS,
   ITEM_INDEX,
   OTHER_BADGES,
   SYLLABUS_ITEMS,
   SYLLABUS_META,
   PAGE_SLICES,
+  PAGE_CONTINUED,
   OTHER_PAGE_SLICES,
+  MIGRATED_OTHER_IDS,
   ELECTIVE_OPTIONS,
   electiveChoice,
   sliceAward,
@@ -38,56 +44,81 @@ import {
   importFromBadge,
   SYNC_SCHEMA,
   STORE_KEY,
+  V1_PAGE_MAP,
   PAGE_ID_MIGRATION,
   migratePageId,
   migrateStoredPages,
+  migrateV2toV3,
 } from '../shared/book.js';
 import { BOOK_TO_BADGE_ID, BADGE_ID_TO_BOOK, isKnownItem, awardOfItem } from '../shared/syllabus.js';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/scoutbadge-ids.json', import.meta.url), 'utf8'));
 const pkgVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 
-test('《童軍紀錄冊》66 頁逐頁映射完整、無缺漏與重覆，數位附錄不列印', () => {
+test('《童軍紀錄冊》110 頁逐頁映射完整、無缺漏與重覆，數位附錄不列印', () => {
   // 版本單一真相：APP_VERSION 必須等於 package.json 版號（`v` + semver）
   assert.match(APP_VERSION, /^v\d+\.\d+\.\d+$/);
   assert.equal(APP_VERSION, `v${pkgVersion}`);
-  assert.equal(PAGE_TOTAL, 66);
-  assert.equal(PRINT_PAGES.length, 66);
+  assert.equal(PAGE_TOTAL, 110);
+  assert.equal(PRINT_PAGES.length, 110);
   assert.deepEqual(
     PRINT_PAGES.map((s) => Number(s.page)),
-    Array.from({ length: 66 }, (_, i) => i + 1),
+    Array.from({ length: 110 }, (_, i) => i + 1),
   );
-  assert.equal(SECTIONS.length, 67);
+  assert.equal(SECTIONS.length, 111);
   const appendix = SECTIONS.find((s) => s.id === 'appendix');
   assert.ok(appendix);
   assert.equal(PRINT_PAGES.some((s) => s.id === 'appendix'), false);
   assert.equal(new Set(SECTIONS.map((s) => s.id)).size, SECTIONS.length);
   assert.equal(STORE_KEY, 'scoutbook.book.v1');
+  // 官方頁 id 三位數，與舊制永不碰撞
+  assert.deepEqual(OFFICIAL_PAGES.map((p) => p.id).slice(0, 3), ['p001', 'p002', 'p003']);
+  assert.equal(OFFICIAL_PAGES.length, 110);
+  assert.equal(new Set(OFFICIAL_PAGES.map((p) => p.no)).size, 110);
+  // 群組覆蓋 1–110 無縫
+  const covered = OFFICIAL_GROUPS.flatMap((g) =>
+    Array.from({ length: g.to - g.from + 1 }, (_, i) => g.from + i),
+  );
+  assert.deepEqual([...covered].sort((a, b) => a - b), Array.from({ length: 110 }, (_, i) => i + 1));
 });
 
-test('頁序：總領袖獎章（p34–p46）在前、專科徽章（p47–p62）在後；v1.0.0 頁碼可遷移', () => {
+test('頁序：110 頁色帶家族正確；舊制頁碼兩跳遷移（v1.0→v1.1→v2）', () => {
   const badges = PRINT_PAGES.map((s) => s.badge).join(',');
   const expect = [
-    ...Array(7).fill('front'),
-    ...Array(2).fill('L1'),
-    ...Array(4).fill('L2'),
-    ...Array(5).fill('L3'),
-    ...Array(5).fill('L4'),
-    ...Array(10).fill('front'),
-    ...Array(13).fill('L5'),
-    ...Array(16).fill('OT'),
-    ...Array(4).fill('front'),
+    ...Array(11).fill('front'),
+    ...Array(3).fill('L1'),
+    ...Array(1).fill('front'),
+    ...Array(9).fill('L2'),
+    ...Array(15).fill('L3'),
+    ...Array(20).fill('L4'),
+    ...Array(16).fill('L5'),
+    ...Array(15).fill('OT'),
+    ...Array(20).fill('front'),
   ].join(',');
   assert.equal(badges, expect);
-  assert.equal(SECTIONS.find((s) => s.id === 'p34').label, '總領袖獎章簡介');
-  assert.equal(SECTIONS.find((s) => s.id === 'p47').label, '興趣組專科徽章（一）');
-  // 遷移表：舊 p40–p49 → p24–p33；舊 p50–p62 → p34–p46；舊 p24–p39 → p47–p62
-  assert.equal(Object.keys(PAGE_ID_MIGRATION).length, 39);
-  assert.equal(migratePageId('p50'), 'p34');
-  assert.equal(migratePageId('p24'), 'p47');
-  assert.equal(migratePageId('p40'), 'p24');
-  assert.equal(migratePageId('p63'), 'p63');
-  // 來源與目標重疊的鍵一次搬對（舊 p42 頒發紀錄 → p26；舊 p58 領導才 → p42）
+  assert.equal(SECTIONS.find((s) => s.id === 'p001').label, '童軍成員資料');
+  assert.equal(SECTIONS.find((s) => s.id === 'p009').label, '童軍誓詞');
+  assert.equal(SECTIONS.find((s) => s.id === 'p060').label, '總領袖獎章・簡介');
+  assert.equal(SECTIONS.find((s) => s.id === 'p075').label, '總領袖獎章・提名');
+  assert.equal(SECTIONS.find((s) => s.id === 'p078').label, '興趣組');
+  assert.ok(SECTIONS.find((s) => s.id === 'p085').label.startsWith('領導才獎章'));
+  assert.equal(SECTIONS.find((s) => s.id === 'p104').label, '其他獎章及徽章（一）');
+  assert.equal(SECTIONS.find((s) => s.id === 'p110').label, '服務紀錄（二）');
+
+  // 第一代→1.1 代舊表保留 39 條；預設（未知 pagev）走兩跳
+  assert.equal(Object.keys(V1_PAGE_MAP).length, 39);
+  assert.equal(migratePageId('p50', 1), 'p060');
+  assert.equal(migratePageId('p50'), 'p060');
+  assert.equal(migratePageId('p24', 1), 'p078');
+  // 1.1／1.2 代（pagev 2）只走第二跳
+  assert.equal(migratePageId('p50', 2), 'p078');
+  assert.equal(migratePageId('p24', 2), 'p008');
+  assert.equal(migratePageId('p64', 2), 'p009');
+  assert.equal(migratePageId('p63', 2), 'appendix');
+  assert.equal(migratePageId('p01', 2), 'p001');
+  assert.equal(migratePageId('not-a-page', 2), 'not-a-page');
+
+  // v1 跳：只對 pagev < 2 跑；來源與目標重疊一次搬對
   const moved = migrateStoredPages(
     { p42: { investitureDate: '2024-01-01' }, p58: { leadership: { courseName: 'X' } } },
     {},
@@ -95,12 +126,49 @@ test('頁序：總領袖獎章（p34–p46）在前、專科徽章（p47–p62�
   assert.deepEqual(moved.p26, { investitureDate: '2024-01-01' });
   assert.deepEqual(moved.p42, { leadership: { courseName: 'X' } });
   assert.equal(moved.p58, undefined);
-  // 已遷移的不再重跑
   assert.deepEqual(migrateStoredPages({ p26: { a: 1 } }, { pagev: 2 }), { p26: { a: 1 } });
-  // newBook 自動遷移並打標記
-  const book = newBook({ member: {}, pages: { p51: { plan: 'P' } } });
-  assert.deepEqual(book.pages.p35, { plan: 'P' });
-  assert.equal(book.meta.pagev, 2);
+  assert.deepEqual(migrateStoredPages({ p26: { a: 1 } }, { pagev: 3 }), { p26: { a: 1 } });
+
+  // v2 跳：舊鍵原位保留，只複製到新鍵
+  const legacy = {
+    meta: { pagev: 2 },
+    pages: {
+      p26: { investitureDate: '2024-01-01', investingLeader: '李團長', membershipDate: '2024-02-01' },
+      p27: { awards: [{ date: '2025-01-01', award: '區總監嘉許', presentedBy: '區總監' }] },
+      p29: { trips: [{ date: '2025-02-01', route: '麥理浩徑', distance: '10km' }] },
+      p30: { log: [{ date: '2025-03-01', activity: '露營', venue: '大尾篤' }] },
+    },
+    renewals: [{ date: '2026-09-01', validUntil: '2027-08-31' }],
+    service: [{ date: '2025-04-01', activity: '賣旗', hours: '4' }],
+    awardsLog: [{ date: '2025-05-01', award: '最佳小隊', presentedBy: '旅長' }],
+    otherBadges: { 'SC-OTH-002': { date: '2025-01-15' } },
+    progress: { 'OT-LD-A1': { date: '2025-02-01' } },
+  };
+  migrateV2toV3(legacy);
+  assert.equal(legacy.meta.pagev, 3);
+  assert.deepEqual(legacy.pages.p014, { investitureDate: '2024-01-01', investingLeader: '李團長' });
+  assert.equal(legacy.pages.award_L1.date, '2024-02-01');
+  assert.ok(legacy.pages.p26, '舊鍵必須保留');
+  assert.equal(legacy.pages.p006.rows.length, 1);
+  assert.deepEqual(legacy.pages.p106.rows[0], { date: '2025-03-01', place: '大尾篤', brief: '露營', nights: '' });
+  assert.deepEqual(legacy.pages.p107.rows[0], { date: '2025-02-01', place: '', brief: '麥理浩徑', km: '10km' });
+  assert.deepEqual(legacy.pages.p109.rows[0], { date: '2025-04-01', org: '', brief: '賣旗', hours: '4' });
+  assert.equal(legacy.pages.p104.rows.length, 2);
+  // 全文獎章回填：已有日期的不覆寫，其餘同日期帶入
+  assert.equal(legacy.progress['OT-LD-A1'].date, '2025-02-01');
+  assert.equal(legacy.progress['OT-LD-A1'].carriedFromBadge, undefined);
+  assert.deepEqual(legacy.progress['OT-LD-A2'], { date: '2025-01-15', carriedFromBadge: 'SC-OTH-002' });
+  assert.equal(legacy.progress['OT-LD-A7'].date, '2025-01-15');
+  // 冪等：再跑一次不重複加行
+  migrateV2toV3(legacy);
+  assert.equal(legacy.pages.p104.rows.length, 2);
+
+  // newBook 自動走完全鏈並打標記
+  const book = newBook({ member: {}, meta: { pagev: 2 }, pages: { p26: { investitureDate: '2024-01-01' } } });
+  assert.equal(book.pages.p014.investitureDate, '2024-01-01');
+  assert.equal(book.meta.pagev, 3);
+  const fresh = newBook();
+  assert.equal(fresh.meta.pagev, 3);
 });
 
 test('項目 ID 單一真相：shared/syllabus.js 與 scoutbadge data/items.json 逐個相同', () => {
@@ -135,7 +203,7 @@ test('項目 ID 單一真相：shared/syllabus.js 與 scoutbadge data/items.json
   }
 });
 
-test('五個獎章階級齊備：會員章 → 探索 → 標準 → 高級 → 總領袖獎章', () => {
+test('五個進度性獎章＋五個全文獎章：L1–L5 維持 75 項，OT-* 另計 25 項', () => {
   assert.deepEqual(
     ALL_AWARDS.map((a) => a.id),
     ['L1', 'L2', 'L3', 'L4', 'L5'],
@@ -163,18 +231,41 @@ test('五個獎章階級齊備：會員章 → 探索 → 標準 → 高級 → 
     );
   }
 
+  // 全文獎章（紙本專有，不入 scoutbadge 同步）：領導才 7、服務 4、先修 10、宗教 1、社區 3
+  assert.deepEqual(
+    SPOTLIGHT_AWARDS.map((a) => a.id),
+    ['OT-LD', 'OT-SF', 'OT-VS', 'OT-RG', 'OT-CM'],
+  );
+  assert.deepEqual(
+    SPOTLIGHT_AWARDS.map((a) => a.segments.reduce((n, s) => n + s.items.length, 0)),
+    [7, 4, 10, 1, 3],
+  );
+  assert.equal(ALL_TRACKED_AWARDS.length, 10);
+  for (const award of SPOTLIGHT_AWARDS) {
+    for (const item of award.segments.flatMap((s) => s.items)) {
+      assert.ok(item.name.length > 0 && item.en.length > 0 && item.detail.length > 0, `${item.id} 缺名／文`);
+      assert.equal(isKnownItem(item.id), false, `${item.id} 不得進入 scoutbadge 同步白名單`);
+    }
+  }
+  assert.deepEqual(
+    SPOTLIGHT_AWARDS.find((a) => a.id === 'OT-RG').segments[0].items[0].options.length,
+    6,
+  );
+
   // 每個細項都能追溯所屬獎章，供紀錄冊頁面與 PT/18・P120A1 自動填表使用
   assert.equal(awardOfItem('L1-M1')?.id, 'L1');
   assert.equal(awardOfItem('L4-D5')?.id, 'L4');
   assert.equal(awardOfItem('L5-F1')?.id, 'L5');
+  assert.equal(awardOfItem('OT-LD-A1')?.id, 'OT-LD');
+  assert.equal(awardOfItem('OT-VS-A10')?.id, 'OT-VS');
   assert.equal(awardOfItem('SC-INT-001')?.id, 'SC-INT-001');
   assert.equal(awardOfItem('NOT-A-REAL-ID'), null);
 });
 
-test('獎章頁切片覆蓋全部細項、不重不漏；專科徽章頁切片覆蓋全部 143 個', () => {
+test('獎章頁主切片覆蓋全部 100 細項、不重不漏；複示只屬同獎章；專科整組覆蓋 138 行', () => {
   const seen = new Set();
   for (const [pageId, spec] of Object.entries(PAGE_SLICES)) {
-    const award = ALL_AWARDS.find((a) => a.id === spec.award);
+    const award = ALL_TRACKED_AWARDS.find((a) => a.id === spec.award);
     assert.ok(award, `${pageId} 指向不存在的獎章`);
     const sliced = sliceAward(award, pageId);
     assert.ok(sliced.segments.length > 0, `${pageId} 切片為空`);
@@ -183,18 +274,41 @@ test('獎章頁切片覆蓋全部細項、不重不漏；專科徽章頁切片�
       seen.add(item.id);
     }
   }
-  assert.equal(seen.size, 75);
+  assert.equal(seen.size, 100);
 
+  // 複示（continued）：必有主頁、同獎章、同頁不與主切片重疊
+  const continuedSeen = new Set();
+  for (const [pageId, spec] of Object.entries(PAGE_CONTINUED)) {
+    const primary = new Set(PAGE_SLICES[pageId]?.items || []);
+    for (const id of spec.items) {
+      assert.ok(seen.has(id), `${id} 複示但無主頁`);
+      assert.equal(primary.has(id), false, `${pageId} 主從重疊 ${id}`);
+      continuedSeen.add(id);
+    }
+    assert.ok(spec.items.length > 0);
+  }
+  assert.ok(continuedSeen.size > 0, '應有橫跨頁複示');
+
+  // 獎章頁必有簡介／細項／複示／簽發其一，不出空白官方頁
+  for (const pg of OFFICIAL_PAGES.filter((p) => p.kind === 'award')) {
+    assert.ok(pg.intro || pg.items.length || pg.continued.length || pg.sign, `${pg.id} 空獎章頁`);
+  }
+
+  // 專科徽章：整組切片；升格 5 行不列示
+  const expected = { p078: 34, p079: 38, p080: 20, p081: 27, p082: 6, p104: 13 };
+  assert.deepEqual(Object.keys(OTHER_PAGE_SLICES).sort(), Object.keys(expected).sort());
   const seenOther = new Set();
-  for (const pageId of Object.keys(OTHER_PAGE_SLICES)) {
+  for (const [pageId, count] of Object.entries(expected)) {
     const badges = sliceOtherBadges(pageId);
-    assert.ok(badges.length > 0, `${pageId} 切片為空`);
+    assert.equal(badges.length, count, `${pageId} 行數不符`);
     for (const b of badges) {
       assert.equal(seenOther.has(b.id), false, `${b.id} 在多頁重覆出現`);
+      assert.equal(MIGRATED_OTHER_IDS.includes(b.id), false, `${b.id} 已升格，不應列示`);
       seenOther.add(b.id);
     }
   }
-  assert.equal(seenOther.size, 143);
+  assert.equal(seenOther.size, 138);
+  assert.deepEqual([...MIGRATED_OTHER_IDS].sort(), ['SC-OTH-001', 'SC-OTH-002', 'SC-OTH-004', 'SC-OTH-005', 'SC-OTH-008']);
 });
 
 test('自選項目：戶外／海上／航空三選一，社區／生態／氣象三選一', () => {
@@ -237,6 +351,17 @@ test('年齡計算與總領袖獎章進度事實（高級獎章＋領導才訓�
   assert.equal(cs.leadershipCourse, '');
   assert.equal(cs.leadershipDate, '');
   assert.equal(cs.leadershipCert, '');
+
+  // 新分項 OT-LD-A6 可供給領導才訓練班日期；舊 p42 優先
+  const withCourse = newBook({ member: {}, progress: { 'OT-LD-A6': { date: '2025-06-01' } } });
+  assert.equal(chiefScoutReadiness(withCourse).leadershipDate, '2025-06-01');
+  const withLegacy = newBook({
+    member: {},
+    meta: { pagev: 2 },
+    pages: { p42: { leadership: { date: '2024-05-01', courseCode: 'LTC1', certNo: 'C1' } } },
+    progress: { 'OT-LD-A6': { date: '2025-06-01' } },
+  });
+  assert.equal(chiefScoutReadiness(withLegacy).leadershipDate, '2024-05-01');
 });
 
 test('示範紀錄冊只示範版面：統計與會員續期狀態準確', () => {
@@ -260,6 +385,11 @@ test('示範紀錄冊只示範版面：統計與會員續期狀態準確', () =>
   assert.equal(stats.activityBadges, 2);
   assert.equal(badgeStats(demo, 'L1').complete, false);
   assert.equal(badgeStats(demo, 'L1').awardedDate, '2024-11-25');
+  // 全文獎章走同一 badgeStats，示範冊全空白
+  assert.deepEqual(
+    [badgeStats(demo, 'OT-LD'), badgeStats(demo, 'OT-VS')].map((s) => ({ total: s.total, done: s.done })),
+    [{ total: 7, done: 0 }, { total: 10, done: 0 }],
+  );
 
   const ms = membershipStatus(demo);
   assert.equal(ms.active, true);
@@ -304,6 +434,13 @@ test('BOOK → BADGE：匯出一律 pending、零個人資料，只保留 SCOUT 
   const out2 = exportForBadge(blank, 'T12');
   assert.equal(out2.pendingRequests[0].item_id, 'L2-A1');
   assert.equal(out2.pendingProgress['9012345678']['L2-A1'].status, 'pending');
+
+  // 全文獎章（紙本專有）不送 scoutbadge，只留本機
+  const spot = newBook({
+    member: { scoutId: '9012345678' },
+    progress: { 'OT-LD-A1': { date: '2026-09-01' }, 'OT-VS-A1': { date: '2026-09-02' } },
+  });
+  assert.equal(exportForBadge(spot, 'T12').pendingRequests.length, 0);
 
   // 已在雲端 pending 的同一 (ymis, itemId) 不再重複申報
   const repeat = collectPendingForBadge(blank, {}, ['L2-A1']);
@@ -383,6 +520,7 @@ test('空白紀錄冊建立後即為完整可用結構，示範資料不會留�
   assert.deepEqual(book.otherBadges, {});
   assert.deepEqual(book.forms, {});
   assert.equal(book.appVersion, APP_VERSION);
+  assert.equal(book.meta.pagev, 3);
   assert.ok(ITEM_INDEX['L1-M1']);
 
   const demo = demoBook();
