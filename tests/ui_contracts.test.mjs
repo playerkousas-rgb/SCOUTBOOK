@@ -156,14 +156,14 @@ test('童軍綠金配色符合 WCAG AA，且絕無白字配金黃底', () => {
   }
 });
 
-test('官方徽章實圖：official/ 四圖齊備且已接入封面／獎章頁／制服頁（非 SVG 重繪）', () => {
-  for (const f of ['membership-emblem.png', 'badge-csa.png', 'uniform-zh.png', 'uniform-en.png']) {
+test('官方徽章實圖：official/ 七圖齊備且已接入封面／獎章頁／制服頁（非 SVG 重繪）', () => {
+  for (const f of ['membership-emblem.png', 'badge-pathfinder.png', 'badge-standard.png', 'badge-advanced.png', 'badge-csa.png', 'uniform-zh.png', 'uniform-en.png']) {
     const p = path.join(root, 'web/public/official', f);
     assert.ok(fs.existsSync(p), `缺少 web/public/official/${f}`);
     assert.ok(fs.statSync(p).size > 4000, `${f} 疑似空圖`);
   }
   // PNG 檔頭簽名（89 50 4E 47），非改副檔名的 SVG
-  for (const f of ['membership-emblem.png', 'badge-csa.png']) {
+  for (const f of ['membership-emblem.png', 'badge-pathfinder.png', 'badge-standard.png', 'badge-advanced.png', 'badge-csa.png']) {
     const head = fs.readFileSync(path.join(root, 'web/public/official', f)).subarray(0, 4);
     assert.deepEqual([...head], [0x89, 0x50, 0x4e, 0x47], `${f} 不是真 PNG`);
   }
@@ -173,6 +173,9 @@ test('官方徽章實圖：official/ 四圖齊備且已接入封面／獎章頁�
   const back = read('web/src/pages/BookBack.jsx');
   assert.ok(cover.includes('/official/membership-emblem.png'), '封面未用會員章實圖');
   assert.ok(training.includes('/official/membership-emblem.png'), '會員章頁未用實圖');
+  assert.ok(training.includes('/official/badge-pathfinder.png'), '探索獎章頁未用實圖');
+  assert.ok(training.includes('/official/badge-standard.png'), '標準獎章頁未用實圖');
+  assert.ok(training.includes('/official/badge-advanced.png'), '高級獎章頁未用實圖');
   assert.ok(l5.includes('/official/badge-csa.png'), '總領袖獎章頁未用實圖');
   assert.ok(back.includes('/official/uniform-zh.png') && back.includes('/official/uniform-en.png'), '制服頁未用中英圖版');
   assert.ok(back.includes('UNIFORM_LEGEND'), '制服頁缺少 22 項圖例');

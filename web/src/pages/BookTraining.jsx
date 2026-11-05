@@ -134,6 +134,7 @@ export function P10() {
       <H en={`${award.en} (1)`} progress={sliceIds(award, 'p10')}>
         {award.name}（一）
       </H>
+      <AwardArt src="/official/badge-pathfinder.png" zh="童軍探索獎章" en="Scout Pathfinder Award" />
       <AwardIntro award={award} />
       <ProgressRibbon stats={stats} />
       <AwardBlock award={sliceAward(award, 'p10')} />
@@ -208,6 +209,7 @@ export function P14() {
       <H en={`${award.en} (1)`} progress={sliceIds(award, 'p14')}>
         {award.name}（一）
       </H>
+      <AwardArt src="/official/badge-standard.png" zh="童軍標準獎章" en="Scout Standard Award" />
       <AwardIntro award={award} />
       <ProgressRibbon stats={stats} />
       <AwardBlock award={sliceAward(award, 'p14')} />
@@ -298,6 +300,7 @@ export function P19() {
       <H en={`${award.en} (1)`} progress={sliceIds(award, 'p19')}>
         {award.name}（一）
       </H>
+      <AwardArt src="/official/badge-advanced.png" zh="童軍高級獎章" en="Scout Advanced Award" />
       <AwardIntro award={award} />
       <ProgressRibbon stats={stats} />
       <AwardBlock award={sliceAward(award, 'p19')} />
