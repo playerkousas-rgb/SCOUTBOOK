@@ -20,8 +20,12 @@
 - AYP p091–p101 全功能（參加頒發／銅銀野外鍛鍊 8 項前訓／實習及評核旅程／技能／康樂體育／服務科）。
 - member 新增 birthPlace／passportNo／bloodType／emergencyAddr／groupPhone；scouting 新增 scoutRanks／stars；轉旅列紙本化（舊鍵保留）。
 
+- 附錄遷入完成：卷首語（紙本意譯＋誓詞體會欄沿用 pages.p64）／制服圖（UNIFORM 22 圖例＋剔選沿用 pages.p63）／總覽（改列全部追蹤獎章）／說明（頁碼更新為 p001–p005、p102–p110）；列印返回鍵修正為 p001。
+- 刪舊頁面模組 BookFront／BookTraining／BookSkills／BookL5／BookBack；OtherBadgeTable 搬入 components；誓詞正文只留官方第 9 頁。
+- 測試 42/42。
+
 ### 待辦（Todo）
-- 附錄遷入（制服圖／總覽／說明／卷首語）；刪舊頁面模組。
+- v2.0.0 收尾：版本號＋文件＋發佈。
 
 ## [v1.2.0] - 2026-11-05
 

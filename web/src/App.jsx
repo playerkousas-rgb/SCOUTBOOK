@@ -14,7 +14,7 @@ import LeaderGate from './components/LeaderGate.jsx';
 import Welcome from './pages/Welcome.jsx';
 import CoverPage from './pages/CoverPage.jsx';
 import PaperPage, { ContentsPage } from './pages/PaperBook.jsx';
-import { AppendixPage, PrintBook } from './pages/BookBack.jsx';
+import { AppendixPage, PrintBook } from './pages/Appendix.jsx';
 import { FormDoc, FormsAll, FormsIndex } from './pages/Forms.jsx';
 import { HashSnapshotViewer, Scan, ScanView, Signoff } from './pages/Scan.jsx';
 

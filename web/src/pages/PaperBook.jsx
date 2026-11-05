@@ -20,7 +20,7 @@ import { useLang } from '../i18n.jsx';
 import { Area, CircleChoice, Grid, H, Line, Note, P, Page, Rows, Sig } from '../components/Form.jsx';
 import AwardBlock, { AwardArt, AwardPresentation } from '../components/AwardBlock.jsx';
 import { PhotoPicker } from '../components/PhotoPicker.jsx';
-import { OtherBadgeTable } from './BookSkills.jsx';
+import { OtherBadgeTable } from '../components/OtherBadgeTable.jsx';
 import { Icon, cx } from '../ui.jsx';
 import { Link } from '../router.jsx';
 

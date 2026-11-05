@@ -61,7 +61,7 @@ test('110 頁官方紙本 + 目錄 + 數位附錄全部映射於 App.jsx，並�
   assert.ok(app.includes('OFFICIAL_PAGES'));
   assert.ok(app.includes('Object.fromEntries(OFFICIAL_PAGES.map'));
   assert.ok(app.includes('makePaperRoute'));
-  for (const legacy of ['BookFront', 'BookTraining', 'BookSkills', 'BookL5']) {
+  for (const legacy of ['BookFront', 'BookTraining', 'BookSkills', 'BookL5', 'BookBack']) {
     assert.equal(app.includes(legacy), false, `App 不得再引用舊頁面模組 ${legacy}`);
   }
   assert.match(app, /\bcontents\s*:/);
@@ -104,12 +104,12 @@ test('版權與非官方聲明只出現於封面頁腳、數位附錄、選單�
   walk(path.join(root, 'web/src'));
   assert.deepEqual(usages.sort(), [
     'web/src/components/MenuDialog.jsx',
-    'web/src/pages/BookBack.jsx',
+    'web/src/pages/Appendix.jsx',
     'web/src/pages/CoverPage.jsx',
   ]);
 
   // 內頁、目錄、列印及表格不得重複版權聲明
-  for (const rel of ['web/src/pages/Welcome.jsx', 'web/src/components/Paper.jsx', 'web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/Forms.jsx', 'web/src/pages/Scan.jsx']) {
+  for (const rel of ['web/src/pages/Welcome.jsx', 'web/src/components/Paper.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/Forms.jsx', 'web/src/pages/Scan.jsx']) {
     assert.ok(!/Legal(Line|Note)/.test(read(rel)), `${rel} 不得重複版權聲明`);
   }
 });
@@ -179,7 +179,7 @@ test('官方徽章實圖：official/ 七圖齊備且已接入封面／獎章頁�
   }
   const cover = read('web/src/pages/CoverPage.jsx');
   const paper = read('web/src/pages/PaperBook.jsx');
-  const back = read('web/src/pages/BookBack.jsx');
+  const back = read('web/src/pages/Appendix.jsx');
   assert.ok(cover.includes('/official/membership-emblem.png'), '封面未用會員章實圖');
   assert.ok(paper.includes('AWARD_ART'), '獎章頁未用官方圖表');
   assert.ok(paper.includes('<AwardArt'), '獎章頁未渲染實圖');
@@ -255,22 +255,20 @@ test('中英文完全分離：一鍵切換、不以並排方式塞入表格', ()
   assert.ok(css.includes('data-lang'), 'styles.css 需按語言切換排版');
 
   // 內頁不得把中英並列寫死於同一字串（例如「日期 Date」）
-  for (const rel of ['web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/CoverPage.jsx']) {
+  for (const rel of ['web/src/pages/Appendix.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/CoverPage.jsx']) {
     const src = read(rel);
     for (const bad of ['日期 Date', '由 From', '或 OR', '所選項目 Selected Item', '姓名 Name']) {
       assert.equal(src.includes(bad), false, `${rel} 出現中英並列字串「${bad}」`);
     }
   }
 
-  // 誓詞與規律中英分開呈現（第 64 頁）
-  const back = read('web/src/pages/BookBack.jsx');
-  assert.ok(back.includes('PROMISE_ZH') && back.includes('LAW_ZH'));
-  assert.ok(back.includes('我願以信譽為誓'));
-  assert.ok(back.includes('童軍信用為人敬'));
-  assert.ok(back.includes('準備'));
-  assert.ok(back.includes('On my honour, I promise that I will do my best'));
-  // 同一頁不可把中英文串接成一行
-  assert.ok(!back.includes('誓詞 Promise'));
+  // 誓詞與規律正文只在官方第 9 頁；附錄卷首只保留個人體會欄（沿用舊數據路徑）
+  const appendix = read('web/src/pages/Appendix.jsx');
+  assert.ok(appendix.includes('pages.p64.promiseNote'));
+  assert.ok(appendix.includes('pages.p64.lawNote'));
+  assert.ok(appendix.includes('/p/p009'));
+  assert.ok(!appendix.includes('PROMISE_ZH'), '誓詞正文不得在附錄重複');
+  assert.ok(!appendix.includes('誓詞 Promise'));
   // v2 官方第 9 頁（PaperBook）：誓詞與規律中英分開呈現
   const paper = read('web/src/pages/PaperBook.jsx');
   assert.ok(paper.includes('我願以信譽為誓'));
@@ -360,4 +358,15 @@ test('個人及AYP官方頁已接入 PaperBook（紙本欄位齊備）', () => {
   }
   assert.ok(paper.includes('評核員報告'));
   assert.ok(paper.includes('服務年星'));
+});
+
+test('附錄含卷首語／制服／總覽／說明，舊頁面模組已刪除', () => {
+  for (const rel of ['web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx']) {
+    assert.equal(fs.existsSync(path.join(root, rel)), false, `${rel} 應已刪除`);
+  }
+  const appendix = read('web/src/pages/Appendix.jsx');
+  for (const key of ['卷首語', 'FOREWORD', '制服及徽章位置', 'UNIFORM_LEGEND', '進度總覽', 'ALL_TRACKED_AWARDS', '使用說明', 'HOW TO USE THIS RECORD BOOK', 'pages?.p63?.uniform', 'pages.p65.nextStep', 'LegalNote']) {
+    assert.ok(appendix.includes(key), `附錄缺少 ${key}`);
+  }
+  assert.ok(!appendix.includes('第 50–62 頁'), '附錄仍有舊頁碼文字');
 });

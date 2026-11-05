@@ -102,7 +102,7 @@
 
 1. 本文件＋paper-text 抽取 → commit（已做）。
 2. `officialPages.js`＋syllabus 擴充＋SECTIONS／路由／遷移骨架 → 可跑 110 頁（已做，獎章／專科／紀錄／靜態頁全功能；個人／AYP 頁待建）。
-3. 個人／續期／靜態／獎章／AYP 頁 → 首個可驗證增量（已做：110 頁全功能，附錄待遷）。
+3. 個人／續期／靜態／獎章／AYP 頁 → 首個可驗證增量（已做：110 頁全功能＋附錄四內容，舊模組已刪）。
 4. L3–L5、OT、LD／SF／VS、AYP、faith、logs、附錄 → 補齊。
 5. 測試／閘門／CHANGELOG／README → v2.0.0。
 
