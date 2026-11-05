@@ -292,7 +292,7 @@ export function buildFormValues(book, formId, refDate = new Date()) {
         date: r.id ? book?.progress?.[r.id]?.date || '' : '',
       })),
     }));
-    const leadership = p.p58?.leadership || {};
+    const leadership = p.p42?.leadership || {};
     const sectionC = PT18_SECTION_C.map((row) => ({
       ...row,
       courseCode: row.leadership ? leadership.courseCode || '' : '',

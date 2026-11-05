@@ -2,7 +2,7 @@ import React from 'react';
 import { BADGE_SYLLABUS, badgeStats, chiefScoutReadiness, sliceAward } from '@shared/book.js';
 import { useBook } from '../bookContext.js';
 import { Area, Grid, H, Line, Note, P, Page, Sig } from '../components/Form.jsx';
-import AwardBlock, { AwardPresentation } from '../components/AwardBlock.jsx';
+import AwardBlock, { AwardArt, AwardPresentation } from '../components/AwardBlock.jsx';
 import { Icon, cx } from '../ui.jsx';
 import { Link } from '../router.jsx';
 import { useLang } from '../i18n.jsx';
@@ -43,18 +43,19 @@ function SyncFootnote() {
   );
 }
 
-/* ------------------------------------------------------------ 第 50 頁：總領袖獎章簡介 */
-export function P50() {
+/* ------------------------------------------------------------ 第 34 頁：總領袖獎章簡介 */
+export function P34() {
   const { book } = useBook();
   const { isEn } = useLang();
   const award = byId.L5;
   const stats = badgeStats(book, 'L5');
   const cs = chiefScoutReadiness(book);
   return (
-    <Page id="p50" dense>
+    <Page id="p34" dense>
       <H en={award.en} progress={allIds(award)}>
         {award.name}簡介
       </H>
+      <AwardArt src="/official/badge-csa.png" zh="總領袖獎章" en="Chief Scout's Award" />
       <p className="pglead">
         {isEn ? award.en : award.name}
         {!isEn && award.en && <em> · {award.en}</em>}
@@ -102,20 +103,20 @@ export function P50() {
   );
 }
 
-/* ------------------------------------------------------------ 第 51 頁：考驗計劃 */
-export function P51() {
+/* ------------------------------------------------------------ 第 35 頁：考驗計劃 */
+export function P35() {
   const { isEn } = useLang();
   return (
-    <Page id="p51">
+    <Page id="p35">
       <H en="ASSESSMENT PLAN">考驗計劃</H>
       <Grid cols={2}>
-        <Line label="計劃開始日期" en="Planned Start" type="date" path="pages.p51.planStartDate" />
-        <Line label="預計完成日期" en="Planned Completion" type="date" path="pages.p51.planFinishDate" />
+        <Line label="計劃開始日期" en="Planned Start" type="date" path="pages.p35.planStartDate" />
+        <Line label="預計完成日期" en="Planned Completion" type="date" path="pages.p35.planFinishDate" />
       </Grid>
       <Area
         label="考驗計劃詳情"
         en="Assessment Plan Details"
-        path="pages.p51.plan"
+        path="pages.p35.plan"
         rows={6}
         placeholder={isEn ? 'Items, sequence, venues, assessors…' : '考驗項目、次序、地點、主考人……'}
       />
@@ -126,7 +127,7 @@ export function P51() {
   );
 }
 
-/* ------------------------------------------------------------ 第 52–57 頁：L5 A–F 分段 */
+/* ------------------------------------------------------------ 第 36–41 頁：L5 A–F 分段 */
 function L5SegmentPage({ pageId }) {
   const { book } = useBook();
   const { isEn } = useLang();
@@ -146,46 +147,46 @@ function L5SegmentPage({ pageId }) {
   );
 }
 
-export function P52() {
-  return <L5SegmentPage pageId="p52" />;
+export function P36() {
+  return <L5SegmentPage pageId="p36" />;
 }
 
-export function P53() {
-  return <L5SegmentPage pageId="p53" />;
+export function P37() {
+  return <L5SegmentPage pageId="p37" />;
 }
 
-export function P54() {
-  return <L5SegmentPage pageId="p54" />;
+export function P38() {
+  return <L5SegmentPage pageId="p38" />;
 }
 
-export function P55() {
-  return <L5SegmentPage pageId="p55" />;
+export function P39() {
+  return <L5SegmentPage pageId="p39" />;
 }
 
-export function P56() {
-  return <L5SegmentPage pageId="p56" />;
+export function P40() {
+  return <L5SegmentPage pageId="p40" />;
 }
 
-export function P57() {
-  return <L5SegmentPage pageId="p57" />;
+export function P41() {
+  return <L5SegmentPage pageId="p41" />;
 }
 
-/* ------------------------------------------------------------ 第 58 頁：領導才訓練與服務 */
-export function P58() {
+/* ------------------------------------------------------------ 第 42 頁：領導才訓練與服務 */
+export function P42() {
   const { isEn } = useLang();
   return (
-    <Page id="p58">
+    <Page id="p42">
       <H en="LEADERSHIP TRAINING & SERVICE">領導才訓練與服務</H>
       <Grid cols={2}>
-        <Line label="訓練班名稱" en="Course Name" path="pages.p58.leadership.courseName" placeholder="童軍領導才訓練班" />
-        <Line label="屆別／編號" en="Course Code" path="pages.p58.leadership.courseCode" placeholder="第 32 屆" />
-        <Line label="完成日期" en="Date Completed" type="date" path="pages.p58.leadership.date" />
-        <Line label="證書編號" en="Certificate No." path="pages.p58.leadership.certNo" />
+        <Line label="訓練班名稱" en="Course Name" path="pages.p42.leadership.courseName" placeholder="童軍領導才訓練班" />
+        <Line label="屆別／編號" en="Course Code" path="pages.p42.leadership.courseCode" placeholder="第 32 屆" />
+        <Line label="完成日期" en="Date Completed" type="date" path="pages.p42.leadership.date" />
+        <Line label="證書編號" en="Certificate No." path="pages.p42.leadership.certNo" />
       </Grid>
       <Area
         label="訓練及服務摘要"
         en="Training & Service Summary"
-        path="pages.p58.summary"
+        path="pages.p42.summary"
         rows={4}
         placeholder={isEn ? 'Course highlights, service performed…' : '訓練班重點、曾參與的服務……'}
       />
@@ -196,53 +197,53 @@ export function P58() {
   );
 }
 
-/* ------------------------------------------------------------ 第 59 頁：區總監接見 */
-export function P59() {
+/* ------------------------------------------------------------ 第 43 頁：區總監接見 */
+export function P43() {
   const { isEn } = useLang();
   return (
-    <Page id="p59">
+    <Page id="p43">
       <H en="DISTRICT REVIEW">區總監接見</H>
       <Grid cols={2}>
-        <Line label="接見日期" en="Review Date" type="date" path="pages.p59.date" />
-        <Line label="接見地點" en="Venue" path="pages.p59.venue" />
-        <Line label="區總監姓名" en="District Commissioner" path="pages.p59.reviewer" wide />
+        <Line label="接見日期" en="Review Date" type="date" path="pages.p43.date" />
+        <Line label="接見地點" en="Venue" path="pages.p43.venue" />
+        <Line label="區總監姓名" en="District Commissioner" path="pages.p43.reviewer" wide />
       </Grid>
-      <Area label="接見紀錄" en="Review Notes" path="pages.p59.notes" rows={5} />
-      <Sig label="接見人簽署" en="Reviewer Signature" path="pages.p59.signature" />
+      <Area label="接見紀錄" en="Review Notes" path="pages.p43.notes" rows={5} />
+      <Sig label="接見人簽署" en="Reviewer Signature" path="pages.p43.signature" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 60 頁：地域接見 */
-export function P60() {
+/* ------------------------------------------------------------ 第 44 頁：地域接見 */
+export function P44() {
   const { isEn } = useLang();
   return (
-    <Page id="p60">
+    <Page id="p44">
       <H en="REGIONAL REVIEW">地域接見</H>
       <Grid cols={2}>
-        <Line label="接見日期" en="Review Date" type="date" path="pages.p60.date" />
-        <Line label="接見地點" en="Venue" path="pages.p60.venue" />
-        <Line label="接見人姓名" en="Reviewer" path="pages.p60.reviewer" wide />
+        <Line label="接見日期" en="Review Date" type="date" path="pages.p44.date" />
+        <Line label="接見地點" en="Venue" path="pages.p44.venue" />
+        <Line label="接見人姓名" en="Reviewer" path="pages.p44.reviewer" wide />
       </Grid>
-      <Area label="接見紀錄" en="Review Notes" path="pages.p60.notes" rows={5} />
-      <Sig label="接見人簽署" en="Reviewer Signature" path="pages.p60.signature" />
+      <Area label="接見紀錄" en="Review Notes" path="pages.p44.notes" rows={5} />
+      <Sig label="接見人簽署" en="Reviewer Signature" path="pages.p44.signature" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 61 頁：完成紀錄與提名 */
-export function P61() {
+/* ------------------------------------------------------------ 第 45 頁：完成紀錄與提名 */
+export function P45() {
   const { isEn } = useLang();
   return (
-    <Page id="p61">
+    <Page id="p45">
       <H en="COMPLETION & NOMINATION">完成紀錄與提名</H>
       <Grid cols={2}>
-        <Line label="全部項目完成日期" en="All Items Completed" type="date" path="pages.p61.completedDate" />
-        <Line label="提名日期" en="Nomination Date" type="date" path="pages.p61.nominationDate" />
-        <Line label="提名人（旅長／童軍團長）" en="Nominated By (GSL / SL)" path="pages.p61.nominatedBy" wide />
+        <Line label="全部項目完成日期" en="All Items Completed" type="date" path="pages.p45.completedDate" />
+        <Line label="提名日期" en="Nomination Date" type="date" path="pages.p45.nominationDate" />
+        <Line label="提名人（旅長／童軍團長）" en="Nominated By (GSL / SL)" path="pages.p45.nominatedBy" wide />
       </Grid>
-      <Area label="提名備註" en="Nomination Notes" path="pages.p61.notes" rows={4} />
-      <Sig label="提名人簽署" en="Nominator Signature" path="pages.p61.signature" />
+      <Area label="提名備註" en="Nomination Notes" path="pages.p45.notes" rows={4} />
+      <Sig label="提名人簽署" en="Nominator Signature" path="pages.p45.signature" />
       <div className="pgbtns no-print">
         <Link to="/forms/pt18" className="btn btn--ghost btn--sm">
           <Icon name="file" size={13} /> PT/18 {isEn ? 'Application' : '申請表'}
@@ -252,14 +253,14 @@ export function P61() {
   );
 }
 
-/* ------------------------------------------------------------ 第 62 頁：頒發 */
-export function P62() {
+/* ------------------------------------------------------------ 第 46 頁：頒發 */
+export function P46() {
   const { book } = useBook();
   const { isEn } = useLang();
   const award = byId.L5;
   const stats = badgeStats(book, 'L5');
   return (
-    <Page id="p62" dense>
+    <Page id="p46" dense>
       <H en={`PRESENTATION · ${award.en}`} progress={allIds(award)}>
         頒發
       </H>

@@ -19,14 +19,19 @@ const TOC_GROUPS = [
     ids: ['p08', 'p09', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23'],
   },
   {
-    title: '專科徽章及活動紀錄',
-    en: 'Proficiency Badges & Activity Log',
-    ids: ['p24', 'p25', 'p26', 'p27', 'p28', 'p29', 'p30', 'p31', 'p32', 'p33', 'p34', 'p35', 'p36', 'p37', 'p38', 'p39', 'p40', 'p41', 'p42', 'p43', 'p44', 'p45', 'p46', 'p47', 'p48', 'p49'],
+    title: '訓練計劃及活動紀錄',
+    en: 'Training Plan & Activity Log',
+    ids: ['p24', 'p25', 'p26', 'p27', 'p28', 'p29', 'p30', 'p31', 'p32', 'p33'],
   },
   {
     title: '總領袖獎章',
     en: "Chief Scout's Award",
-    ids: ['p50', 'p51', 'p52', 'p53', 'p54', 'p55', 'p56', 'p57', 'p58', 'p59', 'p60', 'p61', 'p62'],
+    ids: ['p34', 'p35', 'p36', 'p37', 'p38', 'p39', 'p40', 'p41', 'p42', 'p43', 'p44', 'p45', 'p46'],
+  },
+  {
+    title: '專科徽章',
+    en: 'Proficiency Badges',
+    ids: ['p47', 'p48', 'p49', 'p50', 'p51', 'p52', 'p53', 'p54', 'p55', 'p56', 'p57', 'p58', 'p59', 'p60', 'p61', 'p62'],
   },
   {
     title: '誓詞、制服、總覽及說明',
@@ -35,7 +40,7 @@ const TOC_GROUPS = [
   },
 ];
 
-const AWARD_FIRST_PAGE = { L1: 'p08', L2: 'p10', L3: 'p14', L4: 'p19', L5: 'p50' };
+const AWARD_FIRST_PAGE = { L1: 'p08', L2: 'p10', L3: 'p14', L4: 'p19', L5: 'p34' };
 
 /* ------------------------------------------------------------ 目錄及進度摘要 */
 export function ContentsPage() {

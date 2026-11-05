@@ -38,6 +38,9 @@ import {
   importFromBadge,
   SYNC_SCHEMA,
   STORE_KEY,
+  PAGE_ID_MIGRATION,
+  migratePageId,
+  migrateStoredPages,
 } from '../shared/book.js';
 import { BOOK_TO_BADGE_ID, BADGE_ID_TO_BOOK, isKnownItem, awardOfItem } from '../shared/syllabus.js';
 
@@ -60,6 +63,44 @@ test('《童軍紀錄冊》66 頁逐頁映射完整、無缺漏與重覆，數�
   assert.equal(PRINT_PAGES.some((s) => s.id === 'appendix'), false);
   assert.equal(new Set(SECTIONS.map((s) => s.id)).size, SECTIONS.length);
   assert.equal(STORE_KEY, 'scoutbook.book.v1');
+});
+
+test('頁序：總領袖獎章（p34–p46）在前、專科徽章（p47–p62）在後；v1.0.0 頁碼可遷移', () => {
+  const badges = PRINT_PAGES.map((s) => s.badge).join(',');
+  const expect = [
+    ...Array(7).fill('front'),
+    ...Array(2).fill('L1'),
+    ...Array(4).fill('L2'),
+    ...Array(5).fill('L3'),
+    ...Array(5).fill('L4'),
+    ...Array(10).fill('front'),
+    ...Array(13).fill('L5'),
+    ...Array(16).fill('OT'),
+    ...Array(4).fill('front'),
+  ].join(',');
+  assert.equal(badges, expect);
+  assert.equal(SECTIONS.find((s) => s.id === 'p34').label, '總領袖獎章簡介');
+  assert.equal(SECTIONS.find((s) => s.id === 'p47').label, '興趣組專科徽章（一）');
+  // 遷移表：舊 p40–p49 → p24–p33；舊 p50–p62 → p34–p46；舊 p24–p39 → p47–p62
+  assert.equal(Object.keys(PAGE_ID_MIGRATION).length, 39);
+  assert.equal(migratePageId('p50'), 'p34');
+  assert.equal(migratePageId('p24'), 'p47');
+  assert.equal(migratePageId('p40'), 'p24');
+  assert.equal(migratePageId('p63'), 'p63');
+  // 來源與目標重疊的鍵一次搬對（舊 p42 頒發紀錄 → p26；舊 p58 領導才 → p42）
+  const moved = migrateStoredPages(
+    { p42: { investitureDate: '2024-01-01' }, p58: { leadership: { courseName: 'X' } } },
+    {},
+  );
+  assert.deepEqual(moved.p26, { investitureDate: '2024-01-01' });
+  assert.deepEqual(moved.p42, { leadership: { courseName: 'X' } });
+  assert.equal(moved.p58, undefined);
+  // 已遷移的不再重跑
+  assert.deepEqual(migrateStoredPages({ p26: { a: 1 } }, { pagev: 2 }), { p26: { a: 1 } });
+  // newBook 自動遷移並打標記
+  const book = newBook({ member: {}, pages: { p51: { plan: 'P' } } });
+  assert.deepEqual(book.pages.p35, { plan: 'P' });
+  assert.equal(book.meta.pagev, 2);
 });
 
 test('項目 ID 單一真相：shared/syllabus.js 與 scoutbadge data/items.json 逐個相同', () => {

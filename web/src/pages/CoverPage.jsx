@@ -48,6 +48,11 @@ export default function CoverPage({ book, onOpen, last, onContinue, onLeader }) 
       </div>
 
       <div className="coverart__center">
+        <img
+          className="coverart__emblem"
+          src="/official/membership-emblem.png"
+          alt={isEn ? 'Scout Membership Badge' : '童軍會員章'}
+        />
         {isEn ? (
           <>
             <span className="coverart__kicker">SCOUT SECTION</span>

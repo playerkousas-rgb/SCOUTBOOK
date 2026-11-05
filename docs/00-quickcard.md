@@ -3,7 +3,7 @@
 | 項目 | 內容 |
 | :--- | :--- |
 | **定位** | 香港童軍支部個人隨身離線電子紀錄冊（紙本《童軍紀錄冊》＋ 2026 修訂版訓練綱要 ＋ `PT/18`・`P120A1`・`P120A2`）；**可獨立運作**，`scoutbadge` 同步屬可選 |
-| **頁數** | 66 頁自創工作版本（頭七頁對齊家族；第 50–62 頁按 `PT/18` 查閱清單；待紙本覆核，見 `docs/p1-research.md` §4） |
+| **頁數** | 66 頁自創工作版本（L5 p34–p46 在前、專科徽章 p47–p62 在後；待紙本覆核，見 `docs/p1-research.md` §4） |
 | **獨立模式** | 沒有 `/api/scoutbadge`（純靜態主機）時，數位附錄自動顯示「現時以獨立模式運作」＋本機 JSON 交換；其餘功能不變 |
 | **網址路由** | `/` 封面・`/p/p01`–`/p/p66` 紙本逐頁・`/p/contents` 目錄・`/p/appendix` 數位附錄・`/forms` 官方表格（`pt18`、`p120a1`、`p120a2`、`all`）・`/scan` 掃描二維碼・`/print` 整本列印 |
 | **本機儲存鍵** | `scoutbook.book.v1`（紀錄冊主體）、`scoutbook.lang`（語言 `zh`/`en`）、`scoutbook.last`（上次頁面）、`scoutbook.signoff.applied.v1`（已寫入核簽序號）、`scoutbook.scoutbadge.member.v1`（同步身分） |

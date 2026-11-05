@@ -2,7 +2,7 @@ import React from 'react';
 import { BADGE_SYLLABUS, ELECTIVE_OPTIONS, badgeStats, sliceAward } from '@shared/book.js';
 import { useBook } from '../bookContext.js';
 import { CircleChoice, H, Note, P, Page } from '../components/Form.jsx';
-import AwardBlock, { AwardPresentation } from '../components/AwardBlock.jsx';
+import AwardBlock, { AwardArt, AwardPresentation } from '../components/AwardBlock.jsx';
 import { Icon, cx } from '../ui.jsx';
 import { Link } from '../router.jsx';
 import { useLang } from '../i18n.jsx';
@@ -93,6 +93,7 @@ export function P08() {
       <H en={`${award.en} (1)`} progress={sliceIds(award, 'p08')}>
         {award.name}（一）
       </H>
+      <AwardArt src="/official/membership-emblem.png" zh="童軍會員章" en="Scout Membership Badge" />
       <AwardIntro award={award} />
       <ProgressRibbon stats={stats} />
       <AwardBlock award={sliceAward(award, 'p08')} />

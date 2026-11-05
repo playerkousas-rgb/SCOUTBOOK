@@ -4,7 +4,7 @@
 
 | 繁體中文（標準名稱） | English (Canonical) | 程式碼鍵名／常數 | 定義與備註 |
 | :--- | :--- | :--- | :--- |
-| **童軍紀錄冊** | Scout Record Book | `SCOUTBOOK` | 香港童軍總會童軍支部個人紀錄冊（紙本；總領袖獎章考驗紀錄佔第 50–62 頁），另設數位附錄。 |
+| **童軍紀錄冊** | Scout Record Book | `SCOUTBOOK` | 香港童軍總會童軍支部個人紀錄冊（紙本；據 `PT/18` 查閱清單，總領袖獎章考驗紀錄佔第 50–62 頁；數位版自創頁序 L5 在 p34–p46），另設數位附錄。 |
 | **童軍成員編號** | Scout ID | `scoutId`（同步 `memberNo`） | 成員唯一編號（總會 YMIS 內 10 位數字），與 `scoutbadge` 統一；容忍前導零（`0012345678` ≡ `12345678`）；舊稱 `ymis` 只作讀取相容。 |
 | **童軍團** | Scout Troop | `troop` / `unit` / `group` | 成員所屬童軍單位（隸屬地域 `region`、區 `district`、旅 `group`）。 |
 | **小隊** | Patrol | `patrol` | 童軍團內小組；成員直屬單位。 |

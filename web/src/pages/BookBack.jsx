@@ -33,6 +33,33 @@ export const UNIFORM_ITEMS = [
   { key: 'groupName', zh: '旅團名牌（如有）', en: 'Group name tape (if issued)' },
 ];
 
+/* 徽章佩戴位置圖例：圖版沿用 BOOK 家族制服示意圖（綠領巾童軍制服），
+   圖例按童軍支部改寫；實際佩戴一律以總會最新指引為準。 */
+const UNIFORM_LEGEND = [
+  ['1', '黑色皮製巾圈（附有童軍徽號）／基維爾巾圈', 'Black leather woggle (with Scout emblem) / Gilwell woggle'],
+  ['2', '香港章', 'Hong Kong Badge'],
+  ['3', '飛行章／跳傘章', 'Air Activity Badge / Parachutist Badge'],
+  ['4', '服務年星', 'Service Star'],
+  ['5', '會員章／和平使者章（結合世界童軍會員章）', 'Membership Badge / Messenger of Peace Badge (with WOSM Membership Badge)'],
+  ['6', '宗教章／公教章', 'Religious Badge / Catholic Badge'],
+  ['7', '紀念章', 'Commemorative Badge'],
+  ['8', '金紫荊獎章標誌／童軍先修章', 'Golden Bauhinia Award emblem / Scout Preliminary Badge'],
+  ['9', '童軍探索／標準／高級獎章／總領袖獎章', "Scout Pathfinder / Standard / Advanced Award / Chief Scout's Award"],
+  ['10', '童軍肩章', 'Scout Epaulettes'],
+  ['11', '旅章', 'Group Badge'],
+  ['12', '區章', 'District Badge'],
+  ['13', '地域章', 'Region Badge'],
+  ['14', '世界童軍組織推出的獎章／積極公民獎章系列（最多佩戴合共四枚）', 'WOSM badges / Better World Framework (up to four in total)'],
+  ['15', '優異旅團章', 'Outstanding Group Badge'],
+  ['16', '香港青年獎勵計劃金／銀章', 'HKAYP Gold / Silver Award'],
+  ['17', '高級空勤員章', 'Senior Aircrew Badge'],
+  ['18', '舵手章', 'Helmsman Badge'],
+  ['19', '急救章', 'First Aid Badge'],
+  ['20', '童軍拯溺布章', 'Scout Life Saving Cloth Badge'],
+  ['21', '社區參與章', 'Community Involvement Badge'],
+  ['22', 'ATAS 標誌', 'ATAS emblem'],
+];
+
 const uniformChecked = (book) => book?.pages?.p63?.uniform || {};
 
 export function P63() {
@@ -62,6 +89,19 @@ export function P63() {
           ? 'Tick what you already have — the ticks are saved in this book. Always check the Association’s current uniform guidance before sewing on badges.'
           : '剔選已齊備的項目，勾選會即時存在紀錄冊。縫上徽章前，請先核對總會最新的制服及佩戴指引。'}
       </p>
+      <img
+        className="uniform__plate"
+        src={isEn ? '/official/uniform-en.png' : '/official/uniform-zh.png'}
+        alt={isEn ? 'Scout uniform and badge placement' : '童軍制服及徽章佩戴位置'}
+      />
+      <div className="uniform__legend">
+        {UNIFORM_LEGEND.map(([n, zh, en]) => (
+          <p key={n} className="uniform__item">
+            <span className="uniform__no">{n}</span>
+            {isEn ? en : zh}
+          </p>
+        ))}
+      </div>
       <div className="ribbon">
         <span className="ribbon__bar">
           <i style={{ width: `${(doneCount / UNIFORM_ITEMS.length) * 100}%` }} />

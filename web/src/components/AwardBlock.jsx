@@ -251,3 +251,18 @@ export function AwardPresentation({ awardId, title, en }) {
     </div>
   );
 }
+
+/* ------------------------------------------------------------ 官方徽章實圖
+   章圖一律用官方來源裁圖（web/public/official/），保留原印顏色，不用 SVG 重繪。
+   L2–L4 章圖待官方《童軍紀錄冊》PDF 送達後補上。 */
+export function AwardArt({ src, zh, en }) {
+  const { isEn } = useLang();
+  return (
+    <div className="pgart">
+      <span className="awardart">
+        <img className="awardart__img" src={src} alt={isEn ? en : zh} />
+        <span className="awardart__cap">{isEn ? en : zh}</span>
+      </span>
+    </div>
+  );
+}

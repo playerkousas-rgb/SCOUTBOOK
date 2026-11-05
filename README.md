@@ -2,13 +2,13 @@
 
 > **童軍支部個人隨身離線電子紀錄冊** —— 逐頁對應香港童軍總會《童軍紀錄冊》及 2026 年修訂版《童軍訓練綱要》，支援就地打字／手寫簽名、一鍵生成及列印 `PT/18`・`P120A1`・`P120A2` 官方表格、成員⇄領袖純離線二維碼核簽，以及與 `scoutbadge` 旅團進度表的**純進度、零個人資料**雙向同步。
 
-- **目前版本**：`v1.0.0`（已建構：66 頁全頁、`PT/18`・`P120A1`・`P120A2`、測試 38/38；見 [CHANGELOG.md](CHANGELOG.md)）
+- **目前版本**：`v1.1.0`（頁序重排＋全書童軍綠＋官方徽章實圖、測試 40/40；見 [CHANGELOG.md](CHANGELOG.md)）
 - **架構形態**：離線優先 PWA（React + Vite + Service Worker，`localStorage` 本機儲存，零帳號、零雲端上傳；可選配 Vercel `/api/leader` 與 `/api/scoutbadge` 伺服器端接口）
-- **設計主題**：對齊 `CUBSBOOK` `v1.0.2`／`VSBOOK` `v1.0.0`／`ROVERBOOK` `v16` 的介面、安全區與版權規範，改用**童軍綠布面**封面（`#143b28 → #08180f` × 燙金 `#e3c07a`／`#f6e6bb` × 象牙內頁 `#f7f2e7`）；重點按鈕及進度條同樣用童軍綠。金字只准配深綠（10.06:1），金底按鈕一律深炭字（10.67:1），確保 WCAG AA（見 [`docs/design-review.md`](docs/design-review.md)）。
+- **設計主題**：對齊 `CUBSBOOK` `v1.0.2`／`VSBOOK` `v1.0.0`／`ROVERBOOK` `v16` 的介面、安全區與版權規範，改用**童軍綠布面**封面（`#143b28 → #08180f` × 燙金 `#e3c07a`／`#f6e6bb` × 象牙內頁 `#f7f2e7`）；重點按鈕及進度條同樣用童軍綠。金字只准配深綠（10.06:1），金底按鈕一律深炭字（10.67:1）；手寫墨及蓋印一律深童軍綠，會員章／總領袖獎章／制服圖版用官方裁圖（`web/public/official/`）並保留原印顏色，確保 WCAG AA（見 [`docs/design-review.md`](docs/design-review.md)）。
 - **一句話**：BOOK 是「這一位成員」的口袋紀錄冊；全團名冊、批量簽核、多成員切換一律留在 `scoutbadge`。
 - **獨立優先**：BOOK **不接 scoutbadge 亦 100% 可用** —— 逐頁填寫、簽名、官方表格、A4 列印、離線二維碼、JSON 備份全部在本機完成。`scoutbadge` 只是「可選」的免重打同步；純靜態主機（無 `/api`）會自動顯示「獨立模式」，不會卡住任何功能。
 
-> 目前狀態：`v1.0.0` 建構完成（66 頁全頁＋三表＋測試 38/38＋建置通過）。頁序為自創工作版本，待取得紙本後覆核（見 [`docs/p1-research.md`](docs/p1-research.md) §4）；真機三寬度待測（見 [`docs/design-review.md`](docs/design-review.md)）。
+> 目前狀態：`v1.1.0`（L5 p34–p46 在前、專科徽章 p47–p62 在後；官方徽章實圖已接入）。官方《童軍紀錄冊》PDF 已尋獲，待附加後裁 L2–L4 章圖並覆核頁序（見 [`docs/p1-research.md`](docs/p1-research.md) §4）；真機三寬度待測（見 [`docs/design-review.md`](docs/design-review.md)）。
 
 ---
 

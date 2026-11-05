@@ -172,173 +172,173 @@ function P120Link() {
   );
 }
 
-/* ------------------------------------------------------------ 第 24–27 頁：興趣組 */
-export function P24() {
+/* ------------------------------------------------------------ 第 47–50 頁：興趣組 */
+export function P47() {
   return (
-    <Page id="p24" dense>
+    <Page id="p47" dense>
       <H en="INTEREST BADGES I">興趣組專科徽章（一）</H>
       <OtherLead en="Interest badges are assessed under the arrangement of the Scout Leader. Each badge records only one completion entry: date awarded and certificate number.">
         興趣組由童軍團長安排主考。每個徽章只記錄一項完成紀錄：取得日期及證書編號；考驗內容以總會綱要為準。
       </OtherLead>
-      <OtherBadgeTable pageId="p24" />
+      <OtherBadgeTable pageId="p47" />
     </Page>
   );
 }
 
-export function P25() {
+export function P48() {
   return (
-    <Page id="p25" dense>
+    <Page id="p48" dense>
       <H en="INTEREST BADGES II">興趣組專科徽章（二）</H>
-      <OtherBadgeTable pageId="p25" />
+      <OtherBadgeTable pageId="p48" />
     </Page>
   );
 }
 
-export function P26() {
+export function P49() {
   return (
-    <Page id="p26" dense>
+    <Page id="p49" dense>
       <H en="INTEREST BADGES III">興趣組專科徽章（三）</H>
-      <OtherBadgeTable pageId="p26" />
+      <OtherBadgeTable pageId="p49" />
     </Page>
   );
 }
 
-export function P27() {
+export function P50() {
   return (
-    <Page id="p27" dense>
+    <Page id="p50" dense>
       <H en="INTEREST BADGES IV">興趣組專科徽章（四）</H>
-      <OtherBadgeTable pageId="p27" />
+      <OtherBadgeTable pageId="p50" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 28–31 頁：技能組 */
-export function P28() {
+/* ------------------------------------------------------------ 第 51–54 頁：技能組 */
+export function P51() {
   return (
-    <Page id="p28" dense>
+    <Page id="p51" dense>
       <H en="PURSUIT BADGES I">技能組專科徽章（一）</H>
       <OtherLead en="Pursuit badges require the Scout Leader's approval of the assessment application (P120A1), then assessment by an authorised representative.">
         技能組須先經童軍團長批准考驗申請（P120A1），再由獲授權代表考驗。
       </OtherLead>
-      <OtherBadgeTable pageId="p28" />
+      <OtherBadgeTable pageId="p51" />
       <P120Link />
     </Page>
   );
 }
 
-export function P29() {
+export function P52() {
   return (
-    <Page id="p29" dense>
+    <Page id="p52" dense>
       <H en="PURSUIT BADGES II">技能組專科徽章（二）</H>
-      <OtherBadgeTable pageId="p29" />
+      <OtherBadgeTable pageId="p52" />
     </Page>
   );
 }
 
-export function P30() {
+export function P53() {
   return (
-    <Page id="p30" dense>
+    <Page id="p53" dense>
       <H en="PURSUIT BADGES III">技能組專科徽章（三）</H>
-      <OtherBadgeTable pageId="p30" />
+      <OtherBadgeTable pageId="p53" />
     </Page>
   );
 }
 
-export function P31() {
+export function P54() {
   return (
-    <Page id="p31" dense>
+    <Page id="p54" dense>
       <H en="PURSUIT BADGES IV">技能組專科徽章（四）</H>
-      <OtherBadgeTable pageId="p31" />
+      <OtherBadgeTable pageId="p54" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 32–33 頁：服務組 */
-export function P32() {
+/* ------------------------------------------------------------ 第 55–56 頁：服務組 */
+export function P55() {
   return (
-    <Page id="p32" dense>
+    <Page id="p55" dense>
       <H en="SERVICE BADGES I">服務組專科徽章（一）</H>
       <OtherLead en="Service badges require the Scout Leader's approval of the assessment application (P120A1), then assessment by an authorised representative.">
         服務組須先經童軍團長批准考驗申請（P120A1），再由獲授權代表考驗。
       </OtherLead>
-      <OtherBadgeTable pageId="p32" />
+      <OtherBadgeTable pageId="p55" />
       <P120Link />
     </Page>
   );
 }
 
-export function P33() {
+export function P56() {
   return (
-    <Page id="p33" dense>
+    <Page id="p56" dense>
       <H en="SERVICE BADGES II">服務組專科徽章（二）</H>
-      <OtherBadgeTable pageId="p33" />
+      <OtherBadgeTable pageId="p56" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 34–36 頁：教導組 */
-export function P34() {
+/* ------------------------------------------------------------ 第 57–59 頁：教導組 */
+export function P57() {
   return (
-    <Page id="p34" dense>
+    <Page id="p57" dense>
       <H en="INSTRUCTOR BADGES I">教導組專科徽章（一）</H>
       <OtherLead en="Instructor badges: after holding the related proficiency badge, guide at least one Scout for about three months. Assessment application (P120A1) requires the Scout Leader's approval.">
         教導組：取得相關專科徽章後，指導不少於一名童軍約三個月。考驗申請（P120A1）須經童軍團長批准。
       </OtherLead>
-      <OtherBadgeTable pageId="p34" />
+      <OtherBadgeTable pageId="p57" />
       <P120Link />
     </Page>
   );
 }
 
-export function P35() {
+export function P58() {
   return (
-    <Page id="p35" dense>
+    <Page id="p58" dense>
       <H en="INSTRUCTOR BADGES II">教導組專科徽章（二）</H>
-      <OtherBadgeTable pageId="p35" />
+      <OtherBadgeTable pageId="p58" />
     </Page>
   );
 }
 
-export function P36() {
+export function P59() {
   return (
-    <Page id="p36" dense>
+    <Page id="p59" dense>
       <H en="INSTRUCTOR BADGES III">教導組專科徽章（三）</H>
-      <OtherBadgeTable pageId="p36" />
+      <OtherBadgeTable pageId="p59" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 37 頁：海上活動・航空活動 */
-export function P37() {
+/* ------------------------------------------------------------ 第 60 頁：海上活動・航空活動 */
+export function P60() {
   return (
-    <Page id="p37" dense>
+    <Page id="p60" dense>
       <H en="SEA & AIR ACTIVITY BADGES">海上活動・航空活動徽章</H>
       <OtherLead en="Sea activity and air activity badges. Sea Scouts and Air Scouts choose the matching outdoor elective in their progressive awards.">
         海上活動及航空活動徽章。海童軍及空童軍在進度性獎章選用對應的戶外自選項目。
       </OtherLead>
-      <OtherBadgeTable pageId="p37" />
+      <OtherBadgeTable pageId="p60" />
     </Page>
   );
 }
 
-/* ------------------------------------------------------------ 第 38–39 頁：其他徽章 */
-export function P38() {
+/* ------------------------------------------------------------ 第 61–62 頁：其他徽章 */
+export function P61() {
   return (
-    <Page id="p38" dense>
+    <Page id="p61" dense>
       <H en="OTHER BADGES I">其他徽章（一）</H>
       <OtherLead en="Other badges, including international and special programme badges. Record the date awarded and certificate number.">
         其他徽章，包括國際及特別計劃徽章。記錄取得日期及證書編號。
       </OtherLead>
-      <OtherBadgeTable pageId="p38" />
+      <OtherBadgeTable pageId="p61" />
     </Page>
   );
 }
 
-export function P39() {
+export function P62() {
   return (
-    <Page id="p39" dense>
+    <Page id="p62" dense>
       <H en="OTHER BADGES II">其他徽章（二）</H>
-      <OtherBadgeTable pageId="p39" />
+      <OtherBadgeTable pageId="p62" />
       <Note en="Proficiency badge dates recorded here flow into section (3) of form PT/18 and the P120A1 issue record.">
         此處記錄的徽章日期會自動帶入 PT/18 丙部及 P120A1 簽發紀錄。
       </Note>
@@ -346,12 +346,12 @@ export function P39() {
   );
 }
 
-/* ------------------------------------------------------------ 第 40 頁：訓練計劃 */
-export function P40() {
+/* ------------------------------------------------------------ 第 24 頁：訓練計劃 */
+export function P24() {
   const { isEn } = useLang();
   const T = isEn ? TRAINING_PLAN_EN : TRAINING_PLAN;
   return (
-    <Page id="p40">
+    <Page id="p24">
       <H en="TRAINING PLAN">訓練計劃</H>
       <p className="pglead">{T.title}</p>
       <P>{T.purpose}</P>
@@ -388,12 +388,12 @@ export function P40() {
   );
 }
 
-/* ------------------------------------------------------------ 第 41 頁：安全與保護 */
-export function P41() {
+/* ------------------------------------------------------------ 第 25 頁：安全與保護 */
+export function P25() {
   const { isEn } = useLang();
   const S = isEn ? SAFE_FROM_HARM_EN : SAFE_FROM_HARM;
   return (
-    <Page id="p41">
+    <Page id="p25">
       <H en="SAFE FROM HARM">安全與保護</H>
       <p className="pglead">{S.title}</p>
       <P>{S.policy}</P>
@@ -435,21 +435,21 @@ export function P41() {
   );
 }
 
-/* ------------------------------------------------------------ 第 42 頁：頒發及宣誓紀錄 */
-export function P42() {
+/* ------------------------------------------------------------ 第 26 頁：頒發及宣誓紀錄 */
+export function P26() {
   const { isEn } = useLang();
   return (
-    <Page id="p42">
+    <Page id="p26">
       <H en="INVESTITURE & AWARD PRESENTATION">頒發及宣誓紀錄</H>
       <Grid cols={3}>
-        <Line label="宣誓日期" en="Investiture Date" type="date" path="pages.p42.investitureDate" />
-        <Line label="頒發會員章日期" en="Membership Badge Date" type="date" path="pages.p42.membershipDate" />
-        <Line label="宣誓時團長" en="Leader at Investiture" path="pages.p42.investingLeader" />
+        <Line label="宣誓日期" en="Investiture Date" type="date" path="pages.p26.investitureDate" />
+        <Line label="頒發會員章日期" en="Membership Badge Date" type="date" path="pages.p26.membershipDate" />
+        <Line label="宣誓時團長" en="Leader at Investiture" path="pages.p26.investingLeader" />
       </Grid>
       <Sig
         label="監誓人簽署"
         en="Officiating Leader"
-        path="pages.p42.officiant"
+        path="pages.p26.officiant"
         defaultTitle={isEn ? 'Scout Leader' : '童軍團長'}
       />
       <div className="stamprow">
@@ -467,11 +467,11 @@ export function P42() {
   );
 }
 
-/* ------------------------------------------------------------ 第 43 頁：其他獎章 */
-export function P43() {
+/* ------------------------------------------------------------ 第 27 頁：其他獎章 */
+export function P27() {
   const { isEn } = useLang();
   return (
-    <Page id="p43">
+    <Page id="p27">
       <H en="OTHER AWARDS">其他獎章</H>
       <p className="pglead">
         {isEn
@@ -479,7 +479,7 @@ export function P43() {
           : '進度性獎章以外的獎項，例如英勇獎章或社區嘉許。'}
       </p>
       <Rows
-        path="pages.p43.awards"
+        path="pages.p27.awards"
         min={4}
         cols={[
           { k: 'date', label: '日期', en: 'Date', type: 'date', width: 1 },
@@ -492,11 +492,11 @@ export function P43() {
   );
 }
 
-/* ------------------------------------------------------------ 第 44 頁：其他經驗 */
-export function P44() {
+/* ------------------------------------------------------------ 第 28 頁：其他經驗 */
+export function P28() {
   const { isEn } = useLang();
   return (
-    <Page id="p44">
+    <Page id="p28">
       <H en="OTHER EXPERIENCE">其他經驗</H>
       <p className="pglead">
         {isEn
@@ -504,7 +504,7 @@ export function P44() {
           : '值得記下的露營、訓練班、比賽及交流活動。'}
       </p>
       <Rows
-        path="pages.p44.experiences"
+        path="pages.p28.experiences"
         min={5}
         cols={[
           { k: 'date', label: '日期', en: 'Date', type: 'date', width: 1 },
@@ -517,11 +517,11 @@ export function P44() {
   );
 }
 
-/* ------------------------------------------------------------ 第 45 頁：遠足及海外活動 */
-export function P45() {
+/* ------------------------------------------------------------ 第 29 頁：遠足及海外活動 */
+export function P29() {
   const { isEn } = useLang();
   return (
-    <Page id="p45">
+    <Page id="p29">
       <H en="HIKING & OVERSEAS ACTIVITIES">遠足及海外活動</H>
       <p className="pglead">
         {isEn
@@ -529,7 +529,7 @@ export function P45() {
           : '遠足、探險及海外活動。每次請負責領袖簽署確認。'}
       </p>
       <Rows
-        path="pages.p45.trips"
+        path="pages.p29.trips"
         min={5}
         cols={[
           { k: 'date', label: '日期', en: 'Date', type: 'date', width: 1 },
@@ -542,7 +542,7 @@ export function P45() {
   );
 }
 
-/* ------------------------------------------------------------ 第 46–49 頁：活動紀錄 */
+/* ------------------------------------------------------------ 第 30–33 頁：活動紀錄 */
 function ActivityLog({ pageId, numeral, numeralEn }) {
   const { isEn } = useLang();
   return (
@@ -567,18 +567,18 @@ function ActivityLog({ pageId, numeral, numeralEn }) {
   );
 }
 
-export function P46() {
-  return <ActivityLog pageId="p46" numeral="一" numeralEn="I" />;
+export function P30() {
+  return <ActivityLog pageId="p30" numeral="一" numeralEn="I" />;
 }
 
-export function P47() {
-  return <ActivityLog pageId="p47" numeral="二" numeralEn="II" />;
+export function P31() {
+  return <ActivityLog pageId="p31" numeral="二" numeralEn="II" />;
 }
 
-export function P48() {
-  return <ActivityLog pageId="p48" numeral="三" numeralEn="III" />;
+export function P32() {
+  return <ActivityLog pageId="p32" numeral="三" numeralEn="III" />;
 }
 
-export function P49() {
-  return <ActivityLog pageId="p49" numeral="四" numeralEn="IV" />;
+export function P33() {
+  return <ActivityLog pageId="p33" numeral="四" numeralEn="IV" />;
 }

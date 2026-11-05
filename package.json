@@ -1,6 +1,6 @@
 {
   "name": "scoutbook",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "SCOUTBOOK — 童軍支部個人隨身離線電子紀錄冊 / Scout Section Digital Record Book",
   "type": "module",

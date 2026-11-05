@@ -163,7 +163,7 @@ export function buildPayload(book, selection = []) {
       if (Object.keys(row).length) awards[id] = row;
     });
     if (Object.keys(awards).length) payload.awards = awards;
-    const invest = pick(book?.pages?.p42 || {}, ['investitureDate', 'membershipDate', 'investingLeader']);
+    const invest = pick(book?.pages?.p26 || {}, ['investitureDate', 'membershipDate', 'investingLeader']);
     if (Object.keys(invest).length) payload.investiture = invest;
   }
   if (chosen.has('signatures')) {

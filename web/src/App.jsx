@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PAGE_TOTAL, SECTIONS, syncIdentity } from '@shared/book.js';
+import { PAGE_TOTAL, SECTIONS, migratePageId, syncIdentity } from '@shared/book.js';
 import { BookCtx } from './bookContext.js';
 import { loadBook, persistBook } from './bookStore.js';
 import { LangProvider, useLang } from './i18n.jsx';
@@ -16,10 +16,10 @@ import CoverPage from './pages/CoverPage.jsx';
 import { ContentsPage, P01, P02, P03, P04, P05, P06, P07 } from './pages/BookFront.jsx';
 import { P08, P09, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22, P23 } from './pages/BookTraining.jsx';
 import {
-  P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, P37, P38, P39,
-  P40, P41, P42, P43, P44, P45, P46, P47, P48, P49,
+  P24, P25, P26, P27, P28, P29, P30, P31, P32, P33,
+  P47, P48, P49, P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, P60, P61, P62,
 } from './pages/BookSkills.jsx';
-import { P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, P60, P61, P62 } from './pages/BookL5.jsx';
+import { P34, P35, P36, P37, P38, P39, P40, P41, P42, P43, P44, P45, P46 } from './pages/BookL5.jsx';
 import { P63, P64, P65, P66, AppendixPage, PrintBook } from './pages/BookBack.jsx';
 import { FormDoc, FormsAll, FormsIndex } from './pages/Forms.jsx';
 import { HashSnapshotViewer, Scan, ScanView, Signoff } from './pages/Scan.jsx';
@@ -73,7 +73,8 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
 
   const [lastSection, setLastSection] = useState(() => {
     try {
-      return localStorage.getItem('scoutbook.last') || '';
+      // 頁序重排後舊頁碼自動對應新頁碼
+      return migratePageId(localStorage.getItem('scoutbook.last') || '');
     } catch {
       return '';
     }
