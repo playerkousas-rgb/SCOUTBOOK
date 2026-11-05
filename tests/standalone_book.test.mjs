@@ -1,0 +1,179 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import {
+  ALL_AWARDS,
+  OTHER_BADGES,
+  PRINT_PAGES,
+  allStats,
+  badgeStats,
+  demoBook,
+  newBook,
+  toBadgeId,
+} from '../shared/book.js';
+import { FORM_META, buildFormValues, formReadiness } from '../shared/forms.js';
+import { applySignoff, decodePayload, decodeTransfer, encodeSignoff, encodeTransfer } from '../shared/transfer.js';
+import { probeScoutBadgeBridge } from '../web/src/scoutbadgeBridge.js';
+
+const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+
+const jsonRes = (body, { ok = true, status = 200, type = 'application/json; charset=utf-8' } = {}) => ({
+  ok,
+  status,
+  headers: { get: (k) => (k.toLowerCase() === 'content-type' ? type : null) },
+  json: async () => body,
+});
+
+test('BOOK 核心功能完全不需要 BADGE：無網絡亦能建立、填寫、統計、出表、簽名、備份', async () => {
+  // 1. 建立完全空白的紀錄冊（第 1 頁也是空白）
+  const book = newBook();
+  assert.equal(book.member.nameZh, '');
+  assert.equal(book.member.scoutId, '');
+
+  // 2. 只靠本機輸入，逐項記錄進度（模擬使用者自行填寫 + 領袖當面簽名）
+  book.member = { ...book.member, nameZh: '陳小鷹', nameEn: 'CHAN Siu-ying', dob: '2013-04-12', scoutId: '0012345678' };
+  book.progress['L1-M1'] = { date: '2026-09-05', assessor: '李團長' };
+  book.progress['L1-M2'] = { date: '2026-09-12', assessor: '李團長' };
+  book.progress['L2-A1'] = { date: '2026-10-03', assessor: '李團長' };
+  book.otherBadges['SC-PUR-001'] = { date: '2026-10-10', cert: 'PUR/2026/0102' };
+  book.pages.award_L1 = { date: '2026-09-19', certNo: 'MB/2026/0111', presentedBy: '李團長' };
+
+  // 3. 統計即時反映，不依賴任何雲端
+  const stats = allStats(book);
+  assert.equal(stats.done, 3);
+  assert.equal(stats.activityBadges, 1);
+  assert.equal(stats.earned, 1);
+  assert.equal(badgeStats(book, 'L1').percent, Math.round((2 / 11) * 100));
+  assert.equal(stats.awards.find((a) => a.award.id === 'L4').percent, 0);
+
+  // 4. 官方表格自動帶入（PT/18、P120A1、P120A2）
+  const v = buildFormValues(book, 'pt18');
+  assert.equal(v.nameZh, '陳小鷹');
+  assert.equal(v.scoutId, '0012345678');
+  const r = formReadiness(book, 'pt18');
+  assert.ok(r.missing.includes('性別'), '未填性別時應如實回報缺漏，而不是假裝齊備');
+  book.member.gender = 'M';
+  book.member.troop = '沙田第 12 旅童軍團';
+  book.member.group = '沙田第 12 旅';
+  book.member.district = '沙田北區';
+  book.member.region = '新界東地域';
+  assert.equal(formReadiness(book, 'pt18').ready, true);
+  assert.equal(Object.values(FORM_META).every((m) => m.official === false || m.pages > 0), true);
+
+  // 5. 二維碼出示／領袖核簽回傳，全程離線
+  const code = await encodeTransfer(book, ['particulars', 'progress']);
+  assert.match(code.value, /^SB1/);
+  const decoded = await decodeTransfer(code.value);
+  assert.equal(decoded.member.nameZh, '陳小鷹');
+  assert.equal(decoded.progress['L1-M1'].date, '2026-09-05');
+
+  const signoff = await encodeSignoff({
+    member: book.member,
+    leader: { name: '李團長', title: '童軍團長 SL' },
+    items: [{ id: 'L2-A2', date: '2026-10-17' }],
+    otherBadges: [],
+  });
+  assert.match(signoff.value, /^SB1S\./);
+  const applied = applySignoff(book, await decodePayload(signoff.value));
+  assert.equal(applied.book.progress['L2-A2'].date, '2026-10-17');
+  assert.equal(applied.book.progress['L2-A2'].assessor, '李團長');
+  // 本地簽名不等於 scoutbadge 已核實，這個欄位永遠不會被離線流程寫成 true
+  assert.equal(applied.book.progress['L2-A2'].confirmedByBadge ?? false, false);
+
+  // 6. 整本列印頁序固定 66 頁，附錄不列印
+  assert.equal(PRINT_PAGES.length, 66);
+  assert.deepEqual(PRINT_PAGES.map((p) => p.id).slice(0, 3), ['p01', 'p02', 'p03']);
+
+  // 7. 備份／還原（純 JSON，經 localStorage 或檔案）
+  const backup = JSON.parse(JSON.stringify(book));
+  assert.equal(backup.progress['L2-A1'].date, '2026-10-03');
+  assert.equal(backup.otherBadges['SC-PUR-001'].cert, 'PUR/2026/0102');
+});
+
+test('probeScoutBadgeBridge：純靜態部署／404／HTML fallback／壞 payload／逾時 一律安全降級', async () => {
+  // 正常伺服器
+  const ok = await probeScoutBadgeBridge({
+    fetchImpl: async () => jsonRes({ success: true, origin: 'https://scoutbadge.vercel.app', troops: { T12: { name: '沙田第 12 旅' } } }),
+  });
+  assert.equal(ok.available, true);
+  assert.equal(ok.troops.T12.name, '沙田第 12 旅');
+
+  // 靜態主機：SPA rewrite 回 200 text/html
+  const html = await probeScoutBadgeBridge({ fetchImpl: async () => jsonRes(null, { type: 'text/html; charset=utf-8' }) });
+  assert.deepEqual(html, { available: false, reason: 'not-json' });
+
+  // 404（例如只部署 dist、沒有 serverless function）
+  const missing = await probeScoutBadgeBridge({ fetchImpl: async () => jsonRes(null, { ok: false, status: 404 }) });
+  assert.equal(missing.available, false);
+  assert.equal(missing.reason, 'http-404');
+
+  // 有 JSON 但不是橋接介面
+  const wrong = await probeScoutBadgeBridge({ fetchImpl: async () => jsonRes({ error: 'nope' }) });
+  assert.deepEqual(wrong, { available: false, reason: 'bad-payload' });
+
+  // 離線／DNS 失敗
+  const offline = await probeScoutBadgeBridge({
+    fetchImpl: async () => {
+      throw new TypeError('Failed to fetch');
+    },
+  });
+  assert.deepEqual(offline, { available: false, reason: 'network' });
+
+  // 沒有 fetch（極端環境）
+  assert.deepEqual(await probeScoutBadgeBridge({ fetchImpl: null }), { available: false, reason: 'no-fetch' });
+
+  // 逾時：AbortController 生效
+  const slow = await probeScoutBadgeBridge({
+    timeoutMs: 20,
+    fetchImpl: (url, init) =>
+      new Promise((resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
+      }),
+  });
+  assert.deepEqual(slow, { available: false, reason: 'timeout' });
+});
+
+test('數位附錄把 scoutbadge 標示為「可選」，未接駁時提供獨立模式說明與本地 JSON 交換', () => {
+  const card = read('web/src/components/ScoutBadgeSyncCard.jsx');
+  assert.ok(card.includes('probeScoutBadgeBridge'));
+  assert.ok(card.includes('獨立模式') && card.includes('standalone mode'));
+  assert.ok(card.includes('不連接亦可用完整紀錄冊'));
+  assert.ok(card.includes('exportForBadge') && card.includes('importFromBadge'), '離線 JSON 交換必須保留');
+  assert.ok(card.includes("push(isEn ? 'Signed out of scoutbadge'"), '登出只影響雲端連線，不影響本機資料');
+
+  const bridge = read('web/src/scoutbadgeBridge.js');
+  assert.ok(bridge.includes("cache: 'no-store'"));
+  assert.ok(bridge.includes('not-json'), '必須識破 SPA fallback 的 HTML 回應');
+
+  // 只有可選同步卡會呼叫 /api；其餘紀錄冊功能不得依賴後端
+  const webFiles = ['web/src/App.jsx', 'web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx', 'web/src/pages/Forms.jsx', 'web/src/components/AwardBlock.jsx', 'web/src/components/Write.jsx', 'web/src/components/Ink.jsx', 'shared/book.js', 'shared/forms.js', 'shared/transfer.js'];
+  for (const rel of webFiles) {
+    const src = read(rel);
+    assert.equal(/fetch\(\s*['"`]\/api/.test(src), false, `${rel} 不得直接依賴後端 API`);
+  }
+});
+
+test('第 63 頁制服清單可剔選並存入 pages.p63.uniform，重整後仍在', () => {
+  const src = read('web/src/pages/BookBack.jsx');
+  assert.ok(src.includes('uniformChecked'));
+  assert.ok(src.includes('pages: { ...b.pages, p63'));
+  assert.ok(src.includes("role={readOnly ? undefined : 'checkbox'}"), '正常模式可剔選、領袖模式只讀');
+  // 七個項目各有穩定 key，避免改字後勾選狀態對錯位
+  for (const key of ['cap', 'scarf', 'shirt', 'trousers', 'shoes', 'badges', 'groupName']) {
+    assert.ok(src.includes(`key: '${key}'`), `缺少制服項目 ${key}`);
+  }
+  const css = read('web/src/styles.css');
+  assert.ok(css.includes('.checklist__box.is-on'));
+  assert.ok(css.includes('.checklist li.is-interactive'));
+});
+
+test('示範資料只示範版面，不冒充任何領袖核實或簽名', () => {
+  const demo = demoBook();
+  assert.ok(Object.keys(demo.progress).length >= 8);
+  assert.equal(ALL_AWARDS.length, 5);
+  assert.equal(OTHER_BADGES.length, 143);
+  for (const [id, entry] of Object.entries(demo.progress)) {
+    assert.equal(entry.signature ?? null, null, `${id} 不應有假冒簽名`);
+  }
+  assert.equal(toBadgeId('SC-PUR-001'), 'SC-PUR-001');
+});
