@@ -163,6 +163,17 @@ test('頁序：110 頁色帶家族正確；舊制頁碼兩跳遷移（v1.0→v1.
   migrateV2toV3(legacy);
   assert.equal(legacy.pages.p104.rows.length, 2);
 
+  // 轉旅紙本化：新鍵補上，舊鍵保留在物件內
+  const troop = { meta: { pagev: 2 }, transfers: [{ date: '2025-01-01', fromGroup: 'A旅', toGroup: 'B旅', note: 'n' }] };
+  migrateV2toV3(troop);
+  assert.equal(troop.transfers[0].group, 'B旅');
+  assert.equal(troop.transfers[0].note, 'n');
+  assert.equal(troop.transfers[0].fromGroup, 'A旅');
+  // member 宣誓日期作 p014 後備
+  const invest = { meta: { pagev: 2 }, member: { dateInvestiture: '2023-03-03' }, pages: {} };
+  migrateV2toV3(invest);
+  assert.equal(invest.pages.p014.investitureDate, '2023-03-03');
+
   // newBook 自動走完全鏈並打標記
   const book = newBook({ member: {}, meta: { pagev: 2 }, pages: { p26: { investitureDate: '2024-01-01' } } });
   assert.equal(book.pages.p014.investitureDate, '2024-01-01');
@@ -522,6 +533,11 @@ test('空白紀錄冊建立後即為完整可用結構，示範資料不會留�
   assert.equal(book.appVersion, APP_VERSION);
   assert.equal(book.meta.pagev, 3);
   assert.ok(ITEM_INDEX['L1-M1']);
+  for (const k of ['emergencyAddr', 'birthPlace', 'passportNo', 'bloodType', 'groupPhone']) {
+    assert.equal(book.member[k], '', `member 缺 ${k} 預設`);
+  }
+  assert.deepEqual(Object.keys(book.scouting.scoutRanks).sort(), ['aplFrom', 'aplTo', 'plFrom', 'plTo', 'splFrom', 'splTo']);
+  assert.deepEqual(Object.keys(book.scouting.stars).sort(), ['y1', 'y2', 'y3', 'y4', 'y5']);
 
   const demo = demoBook();
   for (const [id, entry] of Object.entries(demo.progress)) {

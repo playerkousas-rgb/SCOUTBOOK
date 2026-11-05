@@ -345,3 +345,19 @@ test('package.json / vite.config.js 已完全改用 scoutbook 及 /api/scoutbadg
   assert.ok(!fs.existsSync(path.join(root, 'api/vsbadge.js')));
   assert.ok(!fs.existsSync(path.join(root, 'api/cubbadge.js')));
 });
+
+test('個人及AYP官方頁已接入 PaperBook（紙本欄位齊備）', () => {
+  const paper = read('web/src/pages/PaperBook.jsx');
+  for (const key of ['member.emergencyAddr', 'member.birthPlace', 'member.passportNo', 'member.bloodType', 'member.groupPhone', 'scouting.scoutRanks', 'scouting.stars', 'member.photo', 'holderSignature', 'transfers', 'addressChanges']) {
+    assert.ok(paper.includes(key), `個人頁缺少 ${key}`);
+  }
+  for (let i = 91; i <= 101; i += 1) {
+    const pid = i < 100 ? `p0${i}` : `p${i}`;
+    assert.ok(paper.includes(pid), `AYP 缺 ${pid}`);
+  }
+  for (const subj of ['裝備', '導航', '營藝', '食物與烹飪', '急救', '安全措施及緊急應變程序', '旅程計劃及記錄', '保護環境']) {
+    assert.ok(paper.includes(subj), `AYP 前訓缺少 ${subj}`);
+  }
+  assert.ok(paper.includes('評核員報告'));
+  assert.ok(paper.includes('服務年星'));
+});

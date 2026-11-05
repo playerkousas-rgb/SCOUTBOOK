@@ -7,6 +7,7 @@ import {
   ALL_AWARDS,
   SPOTLIGHT_AWARDS,
   ELECTIVE_OPTIONS,
+  sanitizeHkidPrefix,
   allStats,
   badgeStats,
   chiefScoutReadiness,
@@ -14,10 +15,11 @@ import {
   sliceAward,
   sliceAwardItems,
 } from '@shared/book.js';
-import { useBook } from '../bookContext.js';
+import { useBook, useField } from '../bookContext.js';
 import { useLang } from '../i18n.jsx';
-import { CircleChoice, Grid, H, Line, Note, P, Page, Rows, Sig } from '../components/Form.jsx';
+import { Area, CircleChoice, Grid, H, Line, Note, P, Page, Rows, Sig } from '../components/Form.jsx';
 import AwardBlock, { AwardArt, AwardPresentation } from '../components/AwardBlock.jsx';
+import { PhotoPicker } from '../components/PhotoPicker.jsx';
 import { OtherBadgeTable } from './BookSkills.jsx';
 import { Icon, cx } from '../ui.jsx';
 import { Link } from '../router.jsx';
@@ -467,32 +469,446 @@ function StaticPage({ spec }) {
   );
 }
 
-/* ------------------------------------------------------------ 待建頁 */
+/* ------------------------------------------------------------ 個人頁（紙本 p1–p5） */
 
-const STUB_FIELDS = {
-  p1: ['童軍成員編號 SCOUT ID', '姓名（中文／英文）', '持有人簽署', '緊急聯絡（姓名關係／電話／地址）', '近照（旅印）'],
-  p2: ['出生日期／地點', '身份證（首四位）／護照號碼', '地址／電話', '血型', '學校', '宗教'],
-  p3: ['地域／區別／旅別', '主辦機構', '小隊', '童軍團長及電話', '旅部地址及電話'],
-  p4: ['小童軍／幼童軍經驗（年期／旅別／職位／最高獎章）', '小隊職務（副／正／團隊長任期）', '服務年星（一至五年）'],
-  p5: ['轉旅紀錄（旅別／日期／前任團長）', '搬遷紀錄（日期／新地址）'],
-};
+function PersonalP1({ spec }) {
+  const [photo, setPhoto] = useField('member.photo', null);
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <div className="ptop">
+        <div className="ptop__photo">
+          <PhotoPicker value={photo} onChange={setPhoto} />
+        </div>
+        <div className="ptop__id">
+          <Line
+            label="童軍成員編號"
+            en="Scout ID"
+            path="member.scoutId"
+            placeholder="0012345678"
+            hint={
+              isEn
+                ? 'Only identifier used for scoutbadge sync. Leave everything else blank and you can still log in.'
+                : '與 scoutbadge 同步只認這個編號；其他資料全部留白亦可登入同步。'
+            }
+          />
+          <Line label="姓名（中文）" en="Name (Chinese)" path="member.nameZh" placeholder="陳小鷹" />
+          <Line label="姓名（英文）" en="Name (English)" path="member.nameEn" placeholder="CHAN Siu-ying" />
+        </div>
+      </div>
+      <Note en="Please stamp the Group chop on the photo.">請於相片上蓋上旅印（線上版以紀錄為準）。</Note>
+      <Sig label="持有人簽署" en="Signature of Holder" path="holderSignature" defaultTitle={isEn ? 'Scout' : '童軍成員'} />
+      <H en="IN CASE OF ACCIDENT">{isEn ? 'In Case of Accident' : '如有意外請代通知'}</H>
+      <Grid cols={2}>
+        <Line label="姓名（關係）" en="Name (Relationship)" path="member.emergencyName" placeholder="陳大文（父親）" />
+        <Line label="電話" en="Telephone" path="member.emergencyPhone" placeholder="9123 8899" />
+      </Grid>
+      <Line label="地址" en="Address" path="member.emergencyAddr" wide />
+      <Note en="Zero personal data cross-system sync: only the Scout ID, item codes and dates ever leave this device.">
+        跨系統同步零個人資料：離開這部裝置的只有 SCOUT ID、項目代號及日期。姓名、電話、地址及相片不會傳送至 scoutbadge。
+      </Note>
+    </Page>
+  );
+}
+
+function PersonalP2({ spec }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <Grid cols={2}>
+        <Line label="出生日期" en="Date of Birth" type="date" path="member.dob" />
+        <Line label="出生地點" en="Place of Birth" path="member.birthPlace" placeholder="香港" />
+      </Grid>
+      <Grid cols={2}>
+        <Line
+          label="身份證首四位"
+          en="HKID First 4"
+          path="member.hkidPrefix"
+          placeholder="A123"
+          transform={sanitizeHkidPrefix}
+          hint={isEn ? 'First 4 characters only' : '只填首四位，例如 A123'}
+        />
+        <Line label="護照號碼" en="Passport No." path="member.passportNo" />
+      </Grid>
+      <Line label="地址（中文）" en="Address (Chinese)" path="member.addressZh" wide />
+      <Line label="地址（英文）" en="Address (English)" path="member.addressEn" wide />
+      <Grid cols={2}>
+        <Line label="電話" en="Telephone" path="member.phone" placeholder="9123 4567" />
+        <Line label="血型" en="Blood Group" path="member.bloodType" placeholder="O+" />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="學校" en="School" path="member.school" />
+        <Line label="宗教" en="Religion" path="member.religion" placeholder="（如有）" />
+      </Grid>
+      <Note en="Contact details stay on this device. They are never part of any scoutbadge sync payload.">
+        聯絡資料只留在這部裝置，永不屬於任何 scoutbadge 同步內容。
+      </Note>
+    </Page>
+  );
+}
+
+function PersonalP3({ spec }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <Grid cols={3}>
+        <Line label="地域" en="Region" path="member.region" placeholder="新界東地域" />
+        <Line label="區別" en="District" path="member.district" placeholder="沙田北區" />
+        <Line label="旅別" en="Group" path="member.group" placeholder="沙田第 12 旅" />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="主辦機構" en="Sponsoring Authority" path="member.sponsoringAuthority" />
+        <Line label="小隊" en="Patrol" path="member.patrol" placeholder="鷹小隊" />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="童軍團長" en="Scout Leader" path="member.sl" />
+        <Line label="團長電話" en="Tel. No. of Scout Leader" path="member.slPhone" />
+      </Grid>
+      <Area label="旅部地址" en="Address of Group HQ" path="member.groupAddress" rows={2} />
+      <Line label="旅部電話" en="Tel. No. of Group HQ" path="member.groupPhone" />
+    </Page>
+  );
+}
+
+const RANK_ROWS = [
+  { from: 'aplFrom', to: 'aplTo', zh: '副小隊長', en: 'Assistant Patrol Leader' },
+  { from: 'plFrom', to: 'plTo', zh: '小隊長', en: 'Patrol Leader' },
+  { from: 'splFrom', to: 'splTo', zh: '團隊長', en: 'Senior Patrol Leader' },
+];
+
+const STAR_ROWS = [
+  { k: 'y1', zh: '一年星', en: '1st year' },
+  { k: 'y2', zh: '二年星', en: '2nd year' },
+  { k: 'y3', zh: '三年星', en: '3rd year' },
+  { k: 'y4', zh: '四年星', en: '4th year' },
+  { k: 'y5', zh: '五年星', en: '5th year' },
+];
+
+function PersonalP4({ spec }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <H en="GRASSHOPPER SCOUT EXPERIENCE">{isEn ? 'Grasshopper Scout Experience' : '小童軍經驗（如有）'}</H>
+      <Grid cols={3}>
+        <Line label="年期由" en="From" type="date" path="scouting.grasshopper.from" />
+        <Line label="至" en="To" type="date" path="scouting.grasshopper.to" />
+        <Line label="旅別" en="Group" path="scouting.grasshopper.unit" />
+      </Grid>
+      <H en="CUB SCOUT EXPERIENCE">{isEn ? 'Cub Scout Experience' : '幼童軍經驗（如有）'}</H>
+      <Grid cols={3}>
+        <Line label="年期由" en="From" type="date" path="scouting.cub.from" />
+        <Line label="至" en="To" type="date" path="scouting.cub.to" />
+        <Line label="旅別" en="Group" path="scouting.cub.unit" />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="職位" en="Rank" path="scouting.cub.post" />
+        <Line label="獲取之最高獎章（年份）" en="Highest Award Achieved (Year)" path="scouting.cub.award" />
+      </Grid>
+      <H en="PATROL APPOINTMENTS">{isEn ? 'Patrol Appointments' : '小隊職務'}</H>
+      <div className="pgtable">
+        <div className="pgtable__head pgtable__row pgtable__row--3">
+          <span>{isEn ? 'Post' : '職位'}</span>
+          <span>{isEn ? 'From' : '由'}</span>
+          <span>{isEn ? 'To' : '至'}</span>
+        </div>
+        {RANK_ROWS.map((row) => (
+          <div className="pgtable__row pgtable__row--3" key={row.from}>
+            <span className="pgtable__cell pgtable__cell--label">
+              {isEn ? row.en : row.zh}
+              {!isEn && <em>{row.en}</em>}
+            </span>
+            <span className="pgtable__cell">
+              <Line label="由" en="From" type="date" path={`scouting.scoutRanks.${row.from}`} />
+            </span>
+            <span className="pgtable__cell">
+              <Line label="至" en="To" type="date" path={`scouting.scoutRanks.${row.to}`} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <H en="SERVICE STARS">{isEn ? 'Service Stars' : '服務年星（右方填上年份）'}</H>
+      <Grid cols={3}>
+        {STAR_ROWS.map((row) => (
+          <Line key={row.k} label={row.zh} en={row.en} path={`scouting.stars.${row.k}`} placeholder="2025" />
+        ))}
+      </Grid>
+    </Page>
+  );
+}
+
+function PersonalP5({ spec }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <P en="Group transfer record. Previous entries are kept as-is.">轉旅紀錄。舊有紀錄原樣保留。</P>
+      <Rows
+        path="transfers"
+        min={3}
+        cols={[
+          { k: 'group', label: '旅別', en: 'Group', width: 2 },
+          { k: 'date', label: '轉旅日期', en: 'Date of Transfer', type: 'date', width: 1 },
+          { k: 'leaderName', label: '前任團長姓名', en: 'Name of Former Scout Leader', width: 2 },
+          { k: 'leaderPhone', label: '前任團長電話', en: 'Tel. No. of Former Scout Leader', width: 2 },
+        ]}
+      />
+      <H en="CHANGE OF ADDRESS">{isEn ? 'Change of Address' : '搬遷紀錄'}</H>
+      <Rows
+        path="addressChanges"
+        min={2}
+        cols={[
+          { k: 'date', label: '搬遷日期', en: 'Date of Change', type: 'date', width: 1 },
+          { k: 'addressZh', label: '新地址（中文）', en: 'New Address (Chinese)', width: 3 },
+          { k: 'addressEn', label: '新地址（英文）', en: 'New Address (English)', width: 3 },
+        ]}
+      />
+      <Note en="A transfer or address change is personal data: it stays in this book and is never sent to scoutbadge.">
+        轉旅及地址更改屬個人資料，只留在本冊，永不送往 scoutbadge。
+      </Note>
+    </Page>
+  );
+}
+
+function PersonalPage({ spec }) {
+  switch (spec.form) {
+    case 'p1': return <PersonalP1 spec={spec} />;
+    case 'p2': return <PersonalP2 spec={spec} />;
+    case 'p3': return <PersonalP3 spec={spec} />;
+    case 'p4': return <PersonalP4 spec={spec} />;
+    case 'p5': return <PersonalP5 spec={spec} />;
+    default: return <StubPage spec={spec} />;
+  }
+}
+
+/* ------------------------------------------------------------ 獎勵計劃頁（紙本 p91–p101） */
+
+const AYP_SUBJECTS = [
+  ['裝備', 'Equipment'],
+  ['導航', 'Navigation'],
+  ['營藝', 'Campcraft'],
+  ['食物與烹飪', 'Food & Cooking'],
+  ['急救', 'First Aid'],
+  ['安全措施及緊急應變程序', 'Safety Precautions & Emergency Procedures'],
+  ['旅程計劃及記錄', 'Journey Planning & Recording'],
+  ['保護環境', 'Care of Environment'],
+];
+
+function AypEnrol({ spec }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <Line label="參加日期" en="Date of joining" type="date" path="pages.p091.joinDate" />
+      <H en="BRONZE AWARD">{isEn ? 'Bronze Award' : '銅章'}</H>
+      <Grid cols={2}>
+        <Line label="銅章頒發日期" en="Bronze Award issue date" type="date" path="pages.p091.bronzeDate" />
+        <Line label="證書頒發日期" en="Certificate issue date" type="date" path="pages.p091.bronzeCertDate" />
+      </Grid>
+      <Sig label="團長簽署" en="Signature of Scout Leader" path="pages.p091.bronzeSig" />
+      <H en="SILVER AWARD">{isEn ? 'Silver Award' : '銀章'}</H>
+      <Grid cols={2}>
+        <Line label="銀章頒發日期" en="Silver Award issue date" type="date" path="pages.p091.silverDate" />
+        <Line label="證書頒發日期" en="Certificate issue date" type="date" path="pages.p091.silverCertDate" />
+      </Grid>
+      <Sig label="團長簽署" en="Signature of Scout Leader" path="pages.p091.silverSig" />
+    </Page>
+  );
+}
+
+function AypTraining({ spec, pageId, level, levelEn }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <P en={`${levelEn}: Adventurous Journey — preliminary training.`}>{level}野外鍛鍊科：基本訓練。</P>
+      <div className="pgtable">
+        <div className="pgtable__head pgtable__row pgtable__row--3">
+          <span>{isEn ? 'Subject' : '項目'}</span>
+          <span>{isEn ? "Instructor's Signature" : '導師簽署'}</span>
+          <span>{isEn ? 'Date' : '日期'}</span>
+        </div>
+        {AYP_SUBJECTS.map(([zh, en], i) => (
+          <div className="pgtable__row pgtable__row--3" key={zh}>
+            <span className="pgtable__cell pgtable__cell--label">
+              {i + 1}. {isEn ? en : zh}
+              {!isEn && <em>{en}</em>}
+            </span>
+            <span className="pgtable__cell">
+              <Line label="導師簽署" en="Instructor" path={`pages.${pageId}.pre.${i}.instructor`} />
+            </span>
+            <span className="pgtable__cell">
+              <Line label="日期" en="Date" type="date" path={`pages.${pageId}.pre.${i}.date`} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <H en="FURTHER TRAINING AS APPROPRIATE">{isEn ? 'Further Training as Appropriate' : '其他訓練'}</H>
+      <Rows
+        path={`pages.${pageId}.extra`}
+        min={2}
+        cols={[
+          { k: 'subject', label: '項目', en: 'Subject', width: 3 },
+          { k: 'instructor', label: '導師簽署', en: "Instructor's Signature", width: 2 },
+          { k: 'date', label: '日期', en: 'Date', type: 'date', width: 1 },
+        ]}
+      />
+    </Page>
+  );
+}
+
+function AypJourney({ spec, pageId }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <P en="The instructor certifies a satisfactory standard in the previous page's subjects, a completed practice journey, and proper equipment for the assessment journey.">
+        導師確認：前頁各項已達滿意水準，實習旅程已完成，參加者裝備足以應付評核旅程。
+      </P>
+      <H en="PRACTICE JOURNEY">{isEn ? 'Practice Journey' : '實習旅程'}</H>
+      <Grid cols={2}>
+        <Line label="地區" en="Area" path={`pages.${pageId}.practice.area`} />
+        <Line label="日期" en="Date" type="date" path={`pages.${pageId}.practice.date`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="簽署" en="Signed" path={`pages.${pageId}.practice.signed`} />
+        <Line label="日期" en="Date" type="date" path={`pages.${pageId}.practice.signedDate`} />
+      </Grid>
+      <H en="ASSESSMENT JOURNEY">{isEn ? 'Assessment Journey' : '評核旅程'}</H>
+      <Grid cols={2}>
+        <Line label="姓名（正楷）" en="Name (IN BLOCK LETTERS)" path={`pages.${pageId}.assessor.name`} />
+        <Line label="簽署" en="Signed" path={`pages.${pageId}.assessor.signed`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="日期" en="Date" type="date" path={`pages.${pageId}.assessor.date`} />
+        <Line label="資歷" en="Qualification" path={`pages.${pageId}.assessor.qual`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="性質" en="Nature" path={`pages.${pageId}.nature`} />
+        <Line label="目的" en="Purpose" path={`pages.${pageId}.purpose`} />
+      </Grid>
+      <Grid cols={3}>
+        <Line label="開始日期" en="Date Started" type="date" path={`pages.${pageId}.started`} />
+        <Line label="地區" en="Area" path={`pages.${pageId}.area`} />
+        <Line label="完成日期" en="Date Completed" type="date" path={`pages.${pageId}.completed`} />
+      </Grid>
+      <Area label="評核員報告" en="Assessor's Report" path={`pages.${pageId}.report`} rows={4} />
+    </Page>
+  );
+}
+
+function AypAssessor({ pageId, activityLabel, activityLabelEn, activityKey, statement, statementEn }) {
+  const { isEn } = useLang();
+  return (
+    <>
+      <P en={statementEn}>{statement}</P>
+      <Line label={activityLabel} en={activityLabelEn} path={`pages.${pageId}.${activityKey}`} />
+      <Grid cols={2}>
+        <Sig label="評核員簽署" en="Signature of Assessor" path={`pages.${pageId}.assessorSig`} />
+        <Line label="日期" en="Date" type="date" path={`pages.${pageId}.assessorDate`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="姓名（正楷）" en="Name (IN BLOCK LETTERS)" path={`pages.${pageId}.assessorName`} />
+        <Line label="資歷" en="Qualification" path={`pages.${pageId}.assessorQual`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="開始日期" en="Date Started" type="date" path={`pages.${pageId}.started`} />
+        <Line label="完成日期" en="Date Completed" type="date" path={`pages.${pageId}.completed`} />
+      </Grid>
+      <Area label="評核員報告" en="Assessor's Report" path={`pages.${pageId}.report`} rows={4} />
+    </>
+  );
+}
+
+function AypSkill({ spec, pageId, statement, statementEn }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <AypAssessor
+        pageId={pageId}
+        activityLabel="選定技能" activityLabelEn="Skill Followed" activityKey="skill"
+        statement={statement} statementEn={statementEn}
+      />
+    </Page>
+  );
+}
+
+function AypRecreation({ spec, pageId, statement, statementEn }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <AypAssessor
+        pageId={pageId}
+        activityLabel="活動" activityLabelEn="Activity" activityKey="activity"
+        statement={statement} statementEn={statementEn}
+      />
+    </Page>
+  );
+}
+
+function AypService({ spec, pageId }) {
+  const { isEn } = useLang();
+  return (
+    <Page id={spec.id}>
+      <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
+      <P en="Where practical service has been given, 3 counselling sessions were held.">
+        參加者在實際服務期間曾接受三次輔導。
+      </P>
+      <Line label="活動" en="Activity" path={`pages.${pageId}.activity`} />
+      <Grid cols={2}>
+        <Line label="開始日期" en="Date Started" type="date" path={`pages.${pageId}.started`} />
+        <Line label="完成日期" en="Date Completed" type="date" path={`pages.${pageId}.completed`} />
+      </Grid>
+      <Area label="評核員報告" en="Assessor's Report" path={`pages.${pageId}.report`} rows={4} />
+      <Grid cols={2}>
+        <Line label="簽署" en="Signed" path={`pages.${pageId}.signed`} />
+        <Line label="日期" en="Date" type="date" path={`pages.${pageId}.signedDate`} />
+      </Grid>
+      <Grid cols={2}>
+        <Line label="姓名（正楷）" en="Name (IN BLOCK LETTERS)" path={`pages.${pageId}.assessorName`} />
+        <Line label="資歷" en="Qualification" path={`pages.${pageId}.assessorQual`} />
+      </Grid>
+    </Page>
+  );
+}
+
+const SKILL_STATEMENT = '導師確認參加者對其所選活動或項目，在應用、文化及社會方面均有認識。';
+const SKILL_STATEMENT_EN = 'The assessor certifies the participant understands the practical, cultural and social aspects of the chosen activity or topic.';
+const REC_STATEMENT = '進度：參加者對其所選活動，在應用技巧、熟練程度、戰略、體能、規則、危險及安全措施各方面均有進步。';
+const REC_STATEMENT_EN = 'Improvement in application, technique, skill, tactics, fitness, rules, hazards and safety precautions for the chosen activity.';
+
+function AYPPage({ spec }) {
+  switch (spec.form) {
+    case 'ayp91': return <AypEnrol spec={spec} />;
+    case 'ayp92': return <AypTraining spec={spec} pageId="p092" level="銅章級" levelEn="Bronze" />;
+    case 'ayp93': return <AypJourney spec={spec} pageId="p093" />;
+    case 'ayp94': return <AypSkill spec={spec} pageId="p094" statement={SKILL_STATEMENT} statementEn={SKILL_STATEMENT_EN} />;
+    case 'ayp95': return <AypRecreation spec={spec} pageId="p095" statement={REC_STATEMENT} statementEn={REC_STATEMENT_EN} />;
+    case 'ayp96': return <AypService spec={spec} pageId="p096" />;
+    case 'ayp97': return <AypTraining spec={spec} pageId="p097" level="銀章級" levelEn="Silver" />;
+    case 'ayp98': return <AypJourney spec={spec} pageId="p098" />;
+    case 'ayp99': return <AypSkill spec={spec} pageId="p099" statement={SKILL_STATEMENT} statementEn={SKILL_STATEMENT_EN} />;
+    case 'ayp100': return <AypRecreation spec={spec} pageId="p100" statement={REC_STATEMENT} statementEn={REC_STATEMENT_EN} />;
+    case 'ayp101': return <AypService spec={spec} pageId="p101" />;
+    default: return <StubPage spec={spec} />;
+  }
+}
+
+/* ------------------------------------------------------------ 待建頁 */
 
 function StubPage({ spec }) {
   const { isEn } = useLang();
-  const fields = spec.kind === 'personal' ? STUB_FIELDS[spec.form] || [] : [];
   return (
     <Page id={spec.id}>
       <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
       <Note en="This official page is under construction. Your existing records are kept and will appear here.">
         此官方頁建構中。已有紀錄會完整保留，完成後自動顯示於此。
       </Note>
-      {fields.length > 0 && (
-        <ul className="dots">
-          {fields.map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
-      )}
     </Page>
   );
 }
@@ -519,6 +935,10 @@ export function PaperPage({ id }) {
       return <ConsentPage spec={spec} />;
     case 'static':
       return <StaticPage spec={spec} />;
+    case 'personal':
+      return <PersonalPage spec={spec} />;
+    case 'ayp-record':
+      return <AYPPage spec={spec} />;
     default:
       return <StubPage spec={spec} />;
   }

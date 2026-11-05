@@ -172,6 +172,9 @@ export function migrateV2toV3(book) {
   if (p26.membershipDate && !pages.award_L1?.date) {
     pages.award_L1 = { ...(pages.award_L1 || {}), date: p26.membershipDate };
   }
+  if (book.member?.dateInvestiture && !pages.p014?.investitureDate) {
+    pages.p014 = { ...(pages.p014 || {}), investitureDate: book.member.dateInvestiture };
+  }
   if (!pages.p006?.rows?.length && Array.isArray(book.renewals) && book.renewals.length) {
     pages.p006 = { ...(pages.p006 || {}), rows: book.renewals.filter(rowHasValue) };
   }
@@ -215,6 +218,13 @@ export function migrateV2toV3(book) {
     })),
   ]);
   book.pages = pages;
+  if (Array.isArray(book.transfers)) {
+    book.transfers = book.transfers.map((t) =>
+      t && !t.group
+        ? { ...t, group: t.toGroup || t.fromGroup || '', leaderName: '', leaderPhone: '' }
+        : t,
+    );
+  }
   const progress = { ...(book.progress || {}) };
   const other = book.otherBadges || {};
   for (const [otherId, awardId] of Object.entries(SPOTLIGHT_BACKFILL)) {
@@ -369,7 +379,7 @@ export function ageInMonths(dob, refDate = new Date()) {
 
 export function newBook(partial = {}) {
   const now = new Date().toISOString();
-  const { member: partialMember, meta: partialMeta, ...rest } = partial;
+  const { member: partialMember, meta: partialMeta, scouting: partialScouting, ...rest } = partial;
   const book = {
     version: 1,
     appVersion: APP_VERSION,
@@ -379,13 +389,16 @@ export function newBook(partial = {}) {
       scoutId: '',
       memberNo: '',
       hkidPrefix: '',
+      passportNo: '',
       gender: '',
       photo: null,
       dob: '',
+      birthPlace: '',
       school: '',
       schoolLevel: '',
       religion: '',
       phone: '',
+      bloodType: '',
       email: '',
       addressZh: '',
       addressEn: '',
@@ -394,6 +407,7 @@ export function newBook(partial = {}) {
       parentPhone: '',
       emergencyName: '',
       emergencyPhone: '',
+      emergencyAddr: '',
       allergies: '',
       troop: '',
       patrol: '',
@@ -402,6 +416,7 @@ export function newBook(partial = {}) {
       region: '',
       sponsoringAuthority: '',
       groupAddress: '',
+      groupPhone: '',
       gsl: '',
       gslPhone: '',
       sl: '',
@@ -417,6 +432,9 @@ export function newBook(partial = {}) {
       scout: { from: '', to: '', unit: '', post: '', award: '' },
       venture: { from: '', to: '', unit: '', post: '', award: '' },
       rover: { from: '', to: '', unit: '', post: '', award: '' },
+      scoutRanks: { aplFrom: '', aplTo: '', plFrom: '', plTo: '', splFrom: '', splTo: '' },
+      stars: { y1: '', y2: '', y3: '', y4: '', y5: '' },
+      ...(partialScouting || {}),
     },
     transfers: [],
     addressChanges: [],
