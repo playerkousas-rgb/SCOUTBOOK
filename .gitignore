@@ -49,3 +49,6 @@ Thumbs.db
 *_local_*
 *_injected*
 *.keyed.html
+
+# 官方 PDF 全文抽取（總會版權，只存本地工作檔，不入庫）
+docs/paper-text/
