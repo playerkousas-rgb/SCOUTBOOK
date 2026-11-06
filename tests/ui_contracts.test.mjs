@@ -139,6 +139,32 @@ test('童軍綠金配色符合 WCAG AA，且絕無白字配金黃底', () => {
   for (const stale of ['cub-yellow', 'cub-ink', 'cubsync', 'parent__', 'parentbar', 'OT-GB', '酒紅', '幼童軍黃']) {
     assert.equal(css.includes(stale), false, `styles.css 仍有殘留 ${stale}`);
   }
+  // 姊妹倉（VSBOOK／ROVERBOOK）酒紅底層：底部翻頁膠囊、遮罩及疊層一律童軍綠
+  for (const stale of ['rgba(46, 7, 16', 'rgba(150, 30, 52', 'rgba(15, 2, 6', 'rgba(18, 3, 7', 'rgba(34, 5, 12', 'rgba(20, 4, 8', 'rgba(30, 4, 11', '#24161c']) {
+    assert.equal(css.includes(stale), false, `styles.css 仍有酒紅底層 ${stale}`);
+  }
+  // 通用掃描：除語意錯誤色 rgba(166, 38, 38) 外，不得有任何紅相（hue 330–25）色值
+  const ALLOWED_RED = new Set(['166,38,38']);
+  for (const m of css.matchAll(/rgba?\((\d+), ?(\d+), ?(\d+)/g)) {
+    const key = m.slice(1, 4).join(',');
+    if (ALLOWED_RED.has(key)) continue;
+    const [r, g, b] = [Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    const sat = max === min ? 0 : l < 0.5 ? (max - min) / (max + min) : (max - min) / (2 - max - min);
+    let hue = 0;
+    if (max !== min) {
+      if (max === r) hue = ((g - b) / (max - min)) % 6;
+      else if (max === g) hue = (b - r) / (max - min) + 2;
+      else hue = (r - g) / (max - min) + 4;
+      hue = (hue * 60 + 360) % 360;
+    }
+    const reddish = (hue < 25 || hue > 330) && sat > 0.2 && l < 0.6;
+    assert.equal(reddish, false, `styles.css 出現紅相色值 rgba(${key})，應改為童軍綠`);
+  }
+  // 手寫墨必須是深童軍綠（不是舊倉的酒紅墨）
+  assert.ok(read('web/src/components/Ink.jsx').includes("const INK_COLOR = '#143b28';"), '手寫墨需為深童軍綠');
   // 頁緣色帶一律綠系，且 L5 有專屬色帶
   for (const ribbon of ["data-badge='L1'", "data-badge='L2'", "data-badge='L3'", "data-badge='L4'", "data-badge='L5'", "data-badge='OT'"]) {
     assert.ok(css.includes(`.sheet[${ribbon}]`), `缺少 ${ribbon} 色帶`);
