@@ -13,6 +13,9 @@
 - 新增 `docs/partner-scoutbadge.md`：給 scoutbadge 的配合清單（不用改／要改／請你決定）。
 
 ### 修正（Fixed）
+- `og:image` 原本誤填姊妹 app 網域（`scoutbook.vercel.app`），改為本 app 真網址 `https://scoutbook-five.vercel.app/icons/og-image-v2.png`；同時補 `og:url` 與 `canonical`，三者同源。夥伴文件的 CORS 白名單同步更正。
+- 新增測試：`og:image` 必須等於本 app 真網址、不得再出現姊妹 app 網域、`canonical`／`og:url`／`og:image` 必須同源。
+- README 補「換圖標後主畫面要重加」的操作步驟（Android／iOS 各一）。
 - 底部翻頁膠囊仍是姊妹倉 VSBOOK／ROVERBOOK 的酒紅底（`rgba(46, 7, 16, 0.9)`）—— 改為童軍綠 `rgba(8, 24, 15, 0.9)`。
 - 同色系一併清零：舞台底部酒紅光暈（`rgba(150, 30, 52, 0.28)`）、離線／更新提示條、遮罩層、吐司、掃描框共 7 處；手寫墨由酒紅黑 `#24161c` 改回深童軍綠 `#143b28`。
 - 新增回歸測試：`styles.css` 掃描紅相色值（僅放行語意錯誤色 `rgba(166, 38, 38)`），並鎖定手寫墨為 `#143b28`。

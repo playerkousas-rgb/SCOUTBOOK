@@ -34,7 +34,7 @@ BOOK 從瀏覽器直接打你的 `/api/*`（經 BOOK 自己的 `/api/scoutbadge`
 realtime 檢查會用 `no-cors` 探測）：
 
 ```http
-Access-Control-Allow-Origin: https://scoutbook.vercel.app
+Access-Control-Allow-Origin: https://scoutbook-five.vercel.app
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type
 ```

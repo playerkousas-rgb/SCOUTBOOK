@@ -316,9 +316,21 @@ test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTM
     'href="/icons/apple-touch-icon-v2.png"',
     'href="/manifest.webmanifest"',
   ]) assert.ok(html.includes(needle), `index.html 缺少 ${needle}`);
-  // og:image 必須絕對網址，否則分享平台攞唔到
+  // og:image 必須絕對網址，且必須係本 app 真網址（曾誤填姊妹 app 網域）
   const og = html.match(/<meta property="og:image" content="([^"]+)"/)[1];
   assert.match(og, /^https:\/\/[^/]+\/icons\/og-image-v2\.png$/, 'og:image 必須絕對網址');
+  assert.equal(og, 'https://scoutbook-five.vercel.app/icons/og-image-v2.png', 'og:image 網域錯（要用本 app 真網址）');
+  assert.equal(html.includes('scoutbook.vercel.app'), false, '不得再出現姊妹 app 網域 scoutbook.vercel.app');
+  // og:url 與 canonical 同源，避免分享／SEO 指向錯誤主機
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/);
+  assert.ok(canonical, 'index.html 需 canonical');
+  const ogUrl = html.match(/<meta property="og:url" content="([^"]+)"/);
+  assert.ok(ogUrl, 'index.html 需 og:url');
+  const origin = (u) => new URL(u).origin;
+  assert.equal(origin(canonical[1]), origin(og), 'canonical 與 og:image 必須同源');
+  assert.equal(origin(ogUrl[1]), origin(og), 'og:url 與 og:image 必須同源');
+  // 夥伴文件的 CORS 白名單亦要指向同一網域
+  assert.ok(read('docs/partner-scoutbadge.md').includes('https://scoutbook-five.vercel.app'), 'CORS 白名單要用本 app 真網址');
   assert.ok(html.includes('property="og:image:width" content="1200"'));
   assert.ok(html.includes('property="og:image:height" content="630"'));
 
