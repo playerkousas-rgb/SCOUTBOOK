@@ -80,9 +80,9 @@ test('BOOK 核心功能完全不需要 BADGE：無網絡亦能建立、填寫、
   // 本地簽名不等於 scoutbadge 已核實，這個欄位永遠不會被離線流程寫成 true
   assert.equal(applied.book.progress['L2-A2'].confirmedByBadge ?? false, false);
 
-  // 6. 整本列印頁序固定 66 頁，附錄不列印
-  assert.equal(PRINT_PAGES.length, 66);
-  assert.deepEqual(PRINT_PAGES.map((p) => p.id).slice(0, 3), ['p01', 'p02', 'p03']);
+  // 6. 整本列印頁序固定 110 頁，附錄不列印
+  assert.equal(PRINT_PAGES.length, 110);
+  assert.deepEqual(PRINT_PAGES.map((p) => p.id).slice(0, 3), ['p001', 'p002', 'p003']);
 
   // 7. 備份／還原（純 JSON，經 localStorage 或檔案）
   const backup = JSON.parse(JSON.stringify(book));
@@ -146,7 +146,7 @@ test('數位附錄把 scoutbadge 標示為「可選」，未接駁時提供獨�
   assert.ok(bridge.includes('not-json'), '必須識破 SPA fallback 的 HTML 回應');
 
   // 只有可選同步卡會呼叫 /api；其餘紀錄冊功能不得依賴後端
-  const webFiles = ['web/src/App.jsx', 'web/src/pages/BookFront.jsx', 'web/src/pages/BookTraining.jsx', 'web/src/pages/BookSkills.jsx', 'web/src/pages/BookL5.jsx', 'web/src/pages/BookBack.jsx', 'web/src/pages/Forms.jsx', 'web/src/components/AwardBlock.jsx', 'web/src/components/Write.jsx', 'web/src/components/Ink.jsx', 'shared/book.js', 'shared/forms.js', 'shared/transfer.js'];
+  const webFiles = ['web/src/App.jsx', 'web/src/pages/PaperBook.jsx', 'web/src/pages/Appendix.jsx', 'web/src/pages/Forms.jsx', 'web/src/components/AwardBlock.jsx', 'web/src/components/Write.jsx', 'web/src/components/Ink.jsx', 'shared/book.js', 'shared/forms.js', 'shared/transfer.js'];
   for (const rel of webFiles) {
     const src = read(rel);
     assert.equal(/fetch\(\s*['"`]\/api/.test(src), false, `${rel} 不得直接依賴後端 API`);
@@ -154,7 +154,7 @@ test('數位附錄把 scoutbadge 標示為「可選」，未接駁時提供獨�
 });
 
 test('第 63 頁制服清單可剔選並存入 pages.p63.uniform，重整後仍在', () => {
-  const src = read('web/src/pages/BookBack.jsx');
+  const src = read('web/src/pages/Appendix.jsx');
   assert.ok(src.includes('uniformChecked'));
   assert.ok(src.includes('pages: { ...b.pages, p63'));
   assert.ok(src.includes("role={readOnly ? undefined : 'checkbox'}"), '正常模式可剔選、領袖模式只讀');

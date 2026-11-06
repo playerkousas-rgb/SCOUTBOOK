@@ -57,7 +57,7 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
                 result.skippedPending ? `（已略過 ${result.skippedPending} 項未核實項目）` : ''
               }`,
         );
-        navigate('/p/p08');
+        navigate('/p/p012');
         onClose();
       } catch (e) {
         push(e.message || (isEn ? 'Cannot read scoutbadge file' : '無法讀取 scoutbadge 檔案'), 'error');

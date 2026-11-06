@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { demoBook, newBook, ALL_AWARDS, OTHER_BADGES } from '../shared/book.js';
+import { PRINT_PAGES, demoBook, newBook, ALL_AWARDS, OTHER_BADGES } from '../shared/book.js';
 import {
   FORM_META,
   FORM_ORDER,
@@ -229,15 +229,15 @@ test('套用領袖核簽：寫入日期／主考／簽名，SCOUT ID 不符即�
   assert.throws(() => applySignoff(demo, { t: KIND_MEMBER }), /核簽單/);
 });
 
-test('列印版面與版面契約：A4 表單、66 頁列印、目錄及附錄存在', () => {
+test('列印版面與版面契約：A4 表單、110 頁列印、目錄及附錄存在', () => {
   const app = read('web/src/App.jsx');
   const forms = read('web/src/pages/Forms.jsx');
   const css = read('web/src/styles.css');
 
-  for (let i = 1; i <= 66; i += 1) {
-    const id = `p${String(i).padStart(2, '0')}`;
-    assert.ok(app.includes(`'${id}'`) || app.includes(id), `App.jsx 缺少 ${id} 路由`);
-  }
+  assert.equal(PRINT_PAGES.length, 110);
+  assert.deepEqual(PRINT_PAGES.map((pg) => pg.id).slice(0, 2), ['p001', 'p002']);
+  assert.equal(PRINT_PAGES[109].id, 'p110');
+  assert.ok(app.includes('OFFICIAL_PAGES'), 'App.jsx 須由官方頁表數據驅動');
   assert.ok(app.includes('contents'));
   assert.ok(app.includes('appendix'));
   assert.ok(app.includes('print'));

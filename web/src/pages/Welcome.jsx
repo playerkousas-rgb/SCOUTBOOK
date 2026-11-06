@@ -29,7 +29,7 @@ export default function Welcome({ onReady, onLeader }) {
   const create = (e) => {
     e.preventDefault();
     if (!form.nameZh.trim() && !form.nameEn.trim()) return;
-    start(newBook({ member: form }), '/p/p01');
+    start(newBook({ member: form }), '/p/p001');
     push(isEn ? 'Record book created' : '紀錄冊已建立，開始填寫吧');
   };
 
@@ -167,7 +167,7 @@ export default function Welcome({ onReady, onLeader }) {
               type="button"
               className="btn btn--onpaper"
               onClick={() => {
-                start(newBook(), '/p/p01');
+                start(newBook(), '/p/p001');
                 push(
                   isEn
                     ? 'Blank record book ready — fill in only what you need'

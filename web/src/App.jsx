@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PAGE_TOTAL, SECTIONS, syncIdentity } from '@shared/book.js';
+import { OFFICIAL_PAGES, PAGE_TOTAL, SECTIONS, migratePageId, syncIdentity } from '@shared/book.js';
 import { BookCtx } from './bookContext.js';
 import { loadBook, persistBook } from './bookStore.js';
 import { LangProvider, useLang } from './i18n.jsx';
@@ -13,28 +13,18 @@ import MenuDialog from './components/MenuDialog.jsx';
 import LeaderGate from './components/LeaderGate.jsx';
 import Welcome from './pages/Welcome.jsx';
 import CoverPage from './pages/CoverPage.jsx';
-import { ContentsPage, P01, P02, P03, P04, P05, P06, P07 } from './pages/BookFront.jsx';
-import { P08, P09, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22, P23 } from './pages/BookTraining.jsx';
-import {
-  P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, P37, P38, P39,
-  P40, P41, P42, P43, P44, P45, P46, P47, P48, P49,
-} from './pages/BookSkills.jsx';
-import { P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, P60, P61, P62 } from './pages/BookL5.jsx';
-import { P63, P64, P65, P66, AppendixPage, PrintBook } from './pages/BookBack.jsx';
+import PaperPage, { ContentsPage } from './pages/PaperBook.jsx';
+import { AppendixPage, PrintBook } from './pages/Appendix.jsx';
 import { FormDoc, FormsAll, FormsIndex } from './pages/Forms.jsx';
 import { HashSnapshotViewer, Scan, ScanView, Signoff } from './pages/Scan.jsx';
 
+const makePaperRoute = (id) => function PaperRoute() {
+  return <PaperPage id={id} />;
+};
+
 const PAGES = {
   contents: ContentsPage,
-  p01: P01, p02: P02, p03: P03, p04: P04, p05: P05, p06: P06, p07: P07,
-  p08: P08, p09: P09, p10: P10, p11: P11, p12: P12, p13: P13, p14: P14, p15: P15,
-  p16: P16, p17: P17, p18: P18, p19: P19, p20: P20, p21: P21, p22: P22, p23: P23,
-  p24: P24, p25: P25, p26: P26, p27: P27, p28: P28, p29: P29, p30: P30, p31: P31,
-  p32: P32, p33: P33, p34: P34, p35: P35, p36: P36, p37: P37, p38: P38, p39: P39,
-  p40: P40, p41: P41, p42: P42, p43: P43, p44: P44, p45: P45, p46: P46, p47: P47,
-  p48: P48, p49: P49, p50: P50, p51: P51, p52: P52, p53: P53, p54: P54, p55: P55,
-  p56: P56, p57: P57, p58: P58, p59: P59, p60: P60, p61: P61, p62: P62, p63: P63,
-  p64: P64, p65: P65, p66: P66,
+  ...Object.fromEntries(OFFICIAL_PAGES.map((pg) => [pg.id, makePaperRoute(pg.id)])),
   appendix: AppendixPage,
 };
 
@@ -73,7 +63,8 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
 
   const [lastSection, setLastSection] = useState(() => {
     try {
-      return localStorage.getItem('scoutbook.last') || '';
+      // 頁序重排後舊頁碼自動對應新頁碼
+      return migratePageId(localStorage.getItem('scoutbook.last') || '', book?.meta?.pagev);
     } catch {
       return '';
     }
@@ -101,12 +92,12 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
   const lastMeta = SECTIONS.find((s) => s.id === lastSection && !s.digital);
   const meta = SECTIONS.find((s) => s.id === section);
   const secIndex = SECTIONS.findIndex((s) => s.id === section);
-  const PageComp = section ? PAGES[section] || P01 : null;
+  const PageComp = section ? PAGES[section] || PAGES.p001 : null;
 
   const go = useCallback(
     (delta) => {
       if (!section) {
-        navigate('/p/p01');
+        navigate('/p/p001');
         return;
       }
       const next = SECTIONS[secIndex + delta];
@@ -344,7 +335,7 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
             <CoverPage
               book={book}
               onOpen={() => {
-                navigate('/p/p01');
+                navigate('/p/p001');
                 push(isEn ? 'Opened Scout Record Book' : '已打開童軍紀錄冊');
               }}
               last={lastMeta}

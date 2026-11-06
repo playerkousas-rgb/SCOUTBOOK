@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   APP_VERSION,
-  ALL_AWARDS,
+  ALL_TRACKED_AWARDS,
   PRINT_PAGES,
   allStats,
   badgeStats,
@@ -20,7 +20,8 @@ import { useLang } from '../i18n.jsx';
 import { LegalNote } from '../components/Legal.jsx';
 
 /* ============================================================
-   第 63 頁：制服及徽章位置
+   附錄內容：卷首語／制服／總覽／說明（原第一代 p63–p66，現為附錄頁）
+   數據路徑維持 pages.p63／p64／p65 不變，舊書免遷移。
    ============================================================ */
 
 export const UNIFORM_ITEMS = [
@@ -33,9 +34,74 @@ export const UNIFORM_ITEMS = [
   { key: 'groupName', zh: '旅團名牌（如有）', en: 'Group name tape (if issued)' },
 ];
 
+/* 徽章佩戴位置圖例：圖版沿用 BOOK 家族制服示意圖（綠領巾童軍制服），
+   圖例按童軍支部改寫；實際佩戴一律以總會最新指引為準。 */
+const UNIFORM_LEGEND = [
+  ['1', '黑色皮製巾圈（附有童軍徽號）／基維爾巾圈', 'Black leather woggle (with Scout emblem) / Gilwell woggle'],
+  ['2', '香港章', 'Hong Kong Badge'],
+  ['3', '飛行章／跳傘章', 'Air Activity Badge / Parachutist Badge'],
+  ['4', '服務年星', 'Service Star'],
+  ['5', '會員章／和平使者章（結合世界童軍會員章）', 'Membership Badge / Messenger of Peace Badge (with WOSM Membership Badge)'],
+  ['6', '宗教章／公教章', 'Religious Badge / Catholic Badge'],
+  ['7', '紀念章', 'Commemorative Badge'],
+  ['8', '金紫荊獎章標誌／童軍先修章', 'Golden Bauhinia Award emblem / Scout Preliminary Badge'],
+  ['9', '童軍探索／標準／高級獎章／總領袖獎章', "Scout Pathfinder / Standard / Advanced Award / Chief Scout's Award"],
+  ['10', '童軍肩章', 'Scout Epaulettes'],
+  ['11', '旅章', 'Group Badge'],
+  ['12', '區章', 'District Badge'],
+  ['13', '地域章', 'Region Badge'],
+  ['14', '世界童軍組織推出的獎章／積極公民獎章系列（最多佩戴合共四枚）', 'WOSM badges / Better World Framework (up to four in total)'],
+  ['15', '優異旅團章', 'Outstanding Group Badge'],
+  ['16', '香港青年獎勵計劃金／銀章', 'HKAYP Gold / Silver Award'],
+  ['17', '高級空勤員章', 'Senior Aircrew Badge'],
+  ['18', '舵手章', 'Helmsman Badge'],
+  ['19', '急救章', 'First Aid Badge'],
+  ['20', '童軍拯溺布章', 'Scout Life Saving Cloth Badge'],
+  ['21', '社區參與章', 'Community Involvement Badge'],
+  ['22', 'ATAS 標誌', 'ATAS emblem'],
+];
+
 const uniformChecked = (book) => book?.pages?.p63?.uniform || {};
 
-export function P63() {
+/* ------------------------------------------------------------ 卷首語（紙本卷首意譯） */
+
+function AppendixForeword() {
+  const { isEn } = useLang();
+  return (
+    <Page id="ax-foreword">
+      <H en="FOREWORD">卷首語</H>
+      <P en="This book records your achievements as a Scout and serves as a useful reference for others. You must present it when applying for the Chief Scout's Award — keep it safe and up to date.">
+        本冊記錄你成為童軍後的各項成就，亦為他人提供有用的參考。申請總領袖獎章時須出示本冊，請妥善保存並保持資料最新。
+      </P>
+      <P en="— The Scout Association of Hong Kong (paraphrased)">—— 香港童軍總會（意譯）</P>
+      <Note en="Full text follows the paper Record Book foreword. The Promise and Law themselves live on page 9 of this book.">
+        全文以紙本《童軍紀錄冊》卷首語為準；誓詞與規律正文見本冊第 9 頁。
+      </Note>
+      <Grid cols={2}>
+        <Line label="我對誓詞的體會" en="My reflection on the Promise" path="pages.p64.promiseNote" rows={2} />
+        <Line label="我實踐規律的例子" en="How I live the Law" path="pages.p64.lawNote" rows={2} />
+      </Grid>
+      <div className="pgbtns no-print">
+        <Link to="/p/p009" className="btn btn--ghost btn--sm">
+          <Icon name="file" size={13} /> {isEn ? 'Page 9 · Promise & Law' : '第 9 頁 · 誓詞與規律'}
+        </Link>
+      </div>
+    </Page>
+  );
+}
+
+function AppendixExtras() {
+  return (
+    <>
+      <AppendixForeword />
+      <AppendixUniform />
+      <AppendixSummary />
+      <AppendixHowto />
+    </>
+  );
+}
+
+function AppendixUniform() {
   const { book, update, readOnly } = useBook();
   const { isEn } = useLang();
   const checked = uniformChecked(book);
@@ -55,13 +121,26 @@ export function P63() {
   };
 
   return (
-    <Page id="p63">
+    <Page id="ax-uniform">
       <H en="UNIFORM & BADGE PLACEMENT">制服及徽章位置</H>
       <p className="pglead">
         {isEn
           ? 'Tick what you already have — the ticks are saved in this book. Always check the Association’s current uniform guidance before sewing on badges.'
           : '剔選已齊備的項目，勾選會即時存在紀錄冊。縫上徽章前，請先核對總會最新的制服及佩戴指引。'}
       </p>
+      <img
+        className="uniform__plate"
+        src={isEn ? '/official/uniform-en.png' : '/official/uniform-zh.png'}
+        alt={isEn ? 'Scout uniform and badge placement' : '童軍制服及徽章佩戴位置'}
+      />
+      <div className="uniform__legend">
+        {UNIFORM_LEGEND.map(([n, zh, en]) => (
+          <p key={n} className="uniform__item">
+            <span className="uniform__no">{n}</span>
+            {isEn ? en : zh}
+          </p>
+        ))}
+      </div>
       <div className="ribbon">
         <span className="ribbon__bar">
           <i style={{ width: `${(doneCount / UNIFORM_ITEMS.length) * 100}%` }} />
@@ -106,109 +185,20 @@ export function P63() {
   );
 }
 
-/* ============================================================
-   第 64 頁：童軍誓詞與規律
-   ============================================================ */
 
-const PROMISE_ZH = [
-  '我願以信譽為誓，竭盡所能；',
-  '對神明，對國家，盡責任；',
-  '對別人，要幫助；',
-  '對規律，必遵行。',
-];
-
-const LAW_ZH = [
-  '童軍信用為人敬。',
-  '童軍待人要忠誠。',
-  '童軍友善兼親切。',
-  '童軍相處如手足。',
-  '童軍勇敢不怕難。',
-  '童軍愛物更惜陰。',
-  '童軍自重又重人。',
-];
-
-const PROMISE_EN =
-  'On my honour, I promise that I will do my best to do my duty to God and to my Country, to help other people and to keep the Scout Law.';
-
-const LAW_EN = [
-  'A Scout is to be trusted.',
-  'A Scout is loyal.',
-  'A Scout is friendly and considerate.',
-  'A Scout belongs to the world-wide family of Scouts.',
-  'A Scout has courage in all difficulties.',
-  'A Scout makes good use of time and is careful of possessions and property.',
-  'A Scout has self respect and respect for others.',
-];
-
-export function P64() {
-  const { isEn } = useLang();
-  return (
-    <Page id="p64">
-      <H en="SCOUT PROMISE & LAW">童軍誓詞與規律</H>
-      <div className="promisebox">
-        <span className="promisebox__label">{isEn ? 'SCOUT PROMISE' : '童軍誓詞'}</span>
-        {isEn ? (
-          <p className="promisebox__text">{PROMISE_EN}</p>
-        ) : (
-          PROMISE_ZH.map((line) => (
-            <p className="promisebox__line" key={line}>
-              {line}
-            </p>
-          ))
-        )}
-      </div>
-      <div className="promisebox">
-        <span className="promisebox__label">{isEn ? 'SCOUT LAW' : '童軍規律'}</span>
-        {isEn ? (
-          <ol className="promisebox__law">
-            {LAW_EN.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ol>
-        ) : (
-          LAW_ZH.map((line, i) => (
-            <p className="promisebox__line" key={line}>
-              {['一', '二', '三', '四', '五', '六', '七'][i]}、{line}
-            </p>
-          ))
-        )}
-      </div>
-      <div className="promisebox promisebox--motto">
-        <span className="promisebox__label">{isEn ? 'SCOUT MOTTO' : '童軍銘言'}</span>
-        <p className="promisebox__text">{isEn ? 'Be Prepared' : '準備'}</p>
-      </div>
-      <Note en="Text follows the Scout Association of Hong Kong “Policy, Organisation and Rules” 1.2.2. The English text is the Association's English version.">
-        誓詞及規律依香港童軍總會《政策、組織及規條》1.2.2；英文為總會英文版本。
-      </Note>
-      <Grid cols={2}>
-        <Line label="我對誓詞的體會" en="My reflection on the Promise" path="pages.p64.promiseNote" rows={2} />
-        <Line label="我實踐規律的例子" en="How I live the Law" path="pages.p64.lawNote" rows={2} />
-      </Grid>
-      <div className="signrowline">
-        <span>{isEn ? 'Scout signature' : '童軍簽署'}</span>
-        <span className="signrowline__hint">{isEn ? 'See page 1 holder signature' : '見第 1 頁持有人簽署'}</span>
-      </div>
-    </Page>
-  );
-}
-
-/* ============================================================
-   第 65 頁：進度總覽
-   ============================================================ */
-
-export function P65() {
+function AppendixSummary() {
   const { book } = useBook();
   const { isEn } = useLang();
   const stats = allStats(book);
   return (
-    <Page id="p65">
+    <Page id="ax-summary">
       <H en="PROGRESS SUMMARY">進度總覽</H>
       <p className="pglead">
         {isEn
           ? 'A one-page overview of your own book. Whole-troop figures belong to scoutbadge.'
           : '只屬你個人紀錄冊的單頁總覽。全團數字屬 scoutbadge。'}
       </p>
-      {ALL_AWARDS.map((award) => {
+      {ALL_TRACKED_AWARDS.map((award) => {
         const s = badgeStats(book, award.id);
         return (
           <div className="sumrow" key={award.id}>
@@ -232,7 +222,7 @@ export function P65() {
         </div>
         <div>
           <span>{isEn ? 'Awards earned' : '已獲獎章'}</span>
-          <strong>{stats.earned} / {ALL_AWARDS.length}</strong>
+          <strong>{stats.earned} / {ALL_TRACKED_AWARDS.length}</strong>
         </div>
         <div>
           <span>{isEn ? 'Syllabus items' : '綱要細項'}</span>
@@ -250,14 +240,11 @@ export function P65() {
   );
 }
 
-/* ============================================================
-   第 66 頁：使用說明
-   ============================================================ */
 
-export function P66() {
+function AppendixHowto() {
   const { isEn } = useLang();
   return (
-    <Page id="p66">
+    <Page id="ax-howto">
       <H en="HOW TO USE THIS RECORD BOOK">使用說明</H>
       <ol className="howto">
         <li>
@@ -289,27 +276,20 @@ export function P66() {
       <Note en="Copyright and disclaimer appear in exactly three places: the cover, this appendix and the About menu — never on every page.">
         版權及免責聲明只出現於三處：封面底部、數位附錄及選單「關於」，不會每頁重複。
       </Note>
-      <P en="This book follows the paper Scout Record Book: pages 1–7 personal particulars, pages 50–62 Chief Scout's Award record (per the PT/18 checklist). Use the print checklist for photocopy sets.">
-        本冊對應紙本《童軍紀錄冊》：第 1–7 頁個人摘要及旅團資料、第 50–62 頁總領袖獎章考驗紀錄（按 PT/18
-        查閱清單編列）。遞交申請時請用「列印檢查清單」核對所需副本。
+      <P en="This book follows the paper Scout Record Book: pages 1–5 personal particulars, pages 102–110 Chief Scout's Award record (per the PT/18 checklist). Use the print checklist for photocopy sets.">
+        本冊對應紙本《童軍紀錄冊》：第 1–5 頁個人摘要及旅團資料、第 102–110 頁總領袖獎章考驗紀錄（按 PT/18 查閱清單編列）。遞交申請時請用「列印檢查清單」核對所需副本。
       </P>
       <div className="pgbtns no-print">
         <Link to="/forms" className="btn btn--ghost btn--sm">
           <Icon name="file" size={13} /> {isEn ? 'Forms & print checklist' : '申請表及列印檢查清單'}
-        </Link>
-        <Link to="/p/appendix" className="btn btn--ghost btn--sm">
-          <Icon name="lock" size={13} /> {isEn ? 'Digital appendix' : '數位附錄'}
         </Link>
       </div>
     </Page>
   );
 }
 
-/* ============================================================
-   數位附錄
-   ============================================================ */
 
-export function AppendixPage() {
+function AppendixTools() {
   const { book, replace } = useBook();
   const readOnly = useReadOnly();
   const { push } = useToast();
@@ -490,16 +470,26 @@ export function AppendixPage() {
   );
 }
 
+
 /* ============================================================
-   整本 A4 列印模式 (/print)
+   數位附錄路由頁：工具＋內容
    ============================================================ */
+
+export function AppendixPage() {
+  return (
+    <>
+      <AppendixTools />
+      <AppendixExtras />
+    </>
+  );
+}
 
 export function PrintBook({ pages }) {
   const { isEn } = useLang();
   return (
     <div className="printall">
       <div className="printall__bar no-print">
-        <Link to="/p/p01" className="btn btn--ghost btn--sm">
+        <Link to="/p/p001" className="btn btn--ghost btn--sm">
           <Icon name="back" size={14} /> {isEn ? 'Back to Book' : '返回紀錄冊'}
         </Link>
         <span>

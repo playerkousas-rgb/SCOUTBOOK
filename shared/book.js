@@ -4,14 +4,18 @@
 // 全團名冊、批量簽核、多成員切換一律屬 scoutbadge（旅團進度表）範疇，本倉庫不做。
 //
 // 頁序說明：紙本《童軍紀錄冊》未能取得，本頁序為自創（頭七頁對齊 BOOK 家族；
-// 第 50–62 頁按 PT/18 查閱清單列為總領袖獎章考驗紀錄）。待取得紙本後覆核。
-// 資料一律以穩定鍵（award_L5、pages.p42 …）儲存，頁序調整不影響已存資料。
+// 總領袖獎章置於訓練計劃及活動紀錄之後、專科徽章之前：第 34–46 頁為總領袖獎章
+// 考驗紀錄，第 47–62 頁為專科徽章）。待取得紙本後覆核。
+// 進度資料一律以穩定鍵（progress.*、otherBadges.*、award_L5 …）儲存；逐頁雜項
+// 以 pages.pNN 儲存，頁序調整時由 PAGE_ID_MIGRATION 自動搬遷（見下）。
 // ==========================================================================
 
 import {
   BADGE_SYLLABUS,
   OTHER_BADGES,
   ALL_AWARDS,
+  ALL_TRACKED_AWARDS,
+  SPOTLIGHT_AWARDS,
   SYLLABUS_ITEMS,
   ITEM_INDEX,
   SYLLABUS_META,
@@ -20,11 +24,20 @@ import {
   toBadgeId,
   toBookId,
 } from './syllabus.js';
+import {
+  OFFICIAL_GROUPS,
+  AWARD_ART,
+  RECORD_COLS,
+  buildOfficialPages,
+  officialPageByNo,
+} from './officialPages.js';
 
 export {
   BADGE_SYLLABUS,
   OTHER_BADGES,
   ALL_AWARDS,
+  ALL_TRACKED_AWARDS,
+  SPOTLIGHT_AWARDS,
   SYLLABUS_ITEMS,
   ITEM_INDEX,
   SYLLABUS_META,
@@ -32,9 +45,13 @@ export {
   SAFE_FROM_HARM,
   toBadgeId,
   toBookId,
+  OFFICIAL_GROUPS,
+  AWARD_ART,
+  RECORD_COLS,
+  officialPageByNo,
 };
 
-export const APP_VERSION = 'v1.0.0';
+export const APP_VERSION = 'v2.0.0';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 
@@ -52,77 +69,177 @@ export function formatDate(value) {
 }
 
 // ------------------------------------------------------------------ 頁序
+export const OFFICIAL_PAGES = buildOfficialPages({
+  itemNames: Object.fromEntries(
+    ALL_TRACKED_AWARDS.flatMap((a) => a.segments.flatMap((sg) => sg.items.map((i) => [i.id, i.name]))),
+  ),
+  itemNamesEn: Object.fromEntries(
+    ALL_TRACKED_AWARDS.flatMap((a) => a.segments.flatMap((sg) => sg.items.map((i) => [i.id, i.en]))),
+  ),
+  awardNames: Object.fromEntries(ALL_TRACKED_AWARDS.map((a) => [a.id, a.name])),
+  awardNamesEn: Object.fromEntries(ALL_TRACKED_AWARDS.map((a) => [a.id, a.en])),
+});
+
+// ------------------------------------------------------------------ 頁序
 export const SECTIONS = [
-  { id: 'p01', page: '1', label: '個人資料', en: 'Personal Particulars', badge: 'front' },
-  { id: 'p02', page: '2', label: '聯絡及家長／監護人', en: 'Contact & Guardian', badge: 'front' },
-  { id: 'p03', page: '3', label: '旅團資料', en: 'Troop & Group', badge: 'front' },
-  { id: 'p04', page: '4', label: '童軍紀錄', en: 'Scouting Record', badge: 'front' },
-  { id: 'p05', page: '5', label: '轉旅・遷移・更改', en: 'Transfer & Changes', badge: 'front' },
-  { id: 'p06', page: '6', label: '會員資格續期', en: 'Membership Renewal', badge: 'front' },
-  { id: 'p07', page: '7', label: '服務及獎勵紀錄', en: 'Service & Awards', badge: 'front' },
-  { id: 'p08', page: '8', label: '會員章（一）', en: 'Membership Badge I', badge: 'L1' },
-  { id: 'p09', page: '9', label: '會員章（二）', en: 'Membership Badge II', badge: 'L1' },
-  { id: 'p10', page: '10', label: '童軍探索獎章（一）', en: 'Pathfinder Award I · Outdoor', badge: 'L2' },
-  { id: 'p11', page: '11', label: '童軍探索獎章（二）', en: 'Pathfinder Award II · Personal', badge: 'L2' },
-  { id: 'p12', page: '12', label: '童軍探索獎章（三）', en: 'Pathfinder Award III · Leadership', badge: 'L2' },
-  { id: 'p13', page: '13', label: '童軍探索獎章（四）', en: 'Pathfinder Award IV · Service', badge: 'L2' },
-  { id: 'p14', page: '14', label: '童軍標準獎章（一）', en: 'Standard Award I · Outdoor', badge: 'L3' },
-  { id: 'p15', page: '15', label: '童軍標準獎章（二）', en: 'Standard Award II · Personal', badge: 'L3' },
-  { id: 'p16', page: '16', label: '童軍標準獎章（三）', en: 'Standard Award III · Leadership', badge: 'L3' },
-  { id: 'p17', page: '17', label: '童軍標準獎章（四）', en: 'Standard Award IV · Service', badge: 'L3' },
-  { id: 'p18', page: '18', label: '童軍標準獎章（五）', en: 'Standard Award V · E & F', badge: 'L3' },
-  { id: 'p19', page: '19', label: '童軍高級獎章（一）', en: 'Advanced Award I · Outdoor', badge: 'L4' },
-  { id: 'p20', page: '20', label: '童軍高級獎章（二）', en: 'Advanced Award II · Personal', badge: 'L4' },
-  { id: 'p21', page: '21', label: '童軍高級獎章（三）', en: 'Advanced Award III · Leadership', badge: 'L4' },
-  { id: 'p22', page: '22', label: '童軍高級獎章（四）', en: 'Advanced Award IV · Service', badge: 'L4' },
-  { id: 'p23', page: '23', label: '童軍高級獎章（五）', en: 'Advanced Award V · E & F', badge: 'L4' },
-  { id: 'p24', page: '24', label: '興趣組專科徽章（一）', en: 'Interest Badges I', badge: 'OT' },
-  { id: 'p25', page: '25', label: '興趣組專科徽章（二）', en: 'Interest Badges II', badge: 'OT' },
-  { id: 'p26', page: '26', label: '興趣組專科徽章（三）', en: 'Interest Badges III', badge: 'OT' },
-  { id: 'p27', page: '27', label: '興趣組專科徽章（四）', en: 'Interest Badges IV', badge: 'OT' },
-  { id: 'p28', page: '28', label: '技能組專科徽章（一）', en: 'Pursuit Badges I', badge: 'OT' },
-  { id: 'p29', page: '29', label: '技能組專科徽章（二）', en: 'Pursuit Badges II', badge: 'OT' },
-  { id: 'p30', page: '30', label: '技能組專科徽章（三）', en: 'Pursuit Badges III', badge: 'OT' },
-  { id: 'p31', page: '31', label: '技能組專科徽章（四）', en: 'Pursuit Badges IV', badge: 'OT' },
-  { id: 'p32', page: '32', label: '服務組專科徽章（一）', en: 'Service Badges I', badge: 'OT' },
-  { id: 'p33', page: '33', label: '服務組專科徽章（二）', en: 'Service Badges II', badge: 'OT' },
-  { id: 'p34', page: '34', label: '教導組專科徽章（一）', en: 'Instructor Badges I', badge: 'OT' },
-  { id: 'p35', page: '35', label: '教導組專科徽章（二）', en: 'Instructor Badges II', badge: 'OT' },
-  { id: 'p36', page: '36', label: '教導組專科徽章（三）', en: 'Instructor Badges III', badge: 'OT' },
-  { id: 'p37', page: '37', label: '海上活動・航空活動徽章', en: 'Sea & Air Badges', badge: 'OT' },
-  { id: 'p38', page: '38', label: '其他徽章（一）', en: 'Other Badges I', badge: 'OT' },
-  { id: 'p39', page: '39', label: '其他徽章（二）', en: 'Other Badges II', badge: 'OT' },
-  { id: 'p40', page: '40', label: '訓練計劃', en: 'Training Plan', badge: 'front' },
-  { id: 'p41', page: '41', label: '安全與保護', en: 'Safe from Harm', badge: 'front' },
-  { id: 'p42', page: '42', label: '頒發及宣誓紀錄', en: 'Investiture & Awards', badge: 'front' },
-  { id: 'p43', page: '43', label: '其他獎章', en: 'Other Awards', badge: 'front' },
-  { id: 'p44', page: '44', label: '其他經驗', en: 'Other Experience', badge: 'front' },
-  { id: 'p45', page: '45', label: '遠足及海外活動', en: 'Hiking & Overseas', badge: 'front' },
-  { id: 'p46', page: '46', label: '活動紀錄（一）', en: 'Activity Log I', badge: 'front' },
-  { id: 'p47', page: '47', label: '活動紀錄（二）', en: 'Activity Log II', badge: 'front' },
-  { id: 'p48', page: '48', label: '活動紀錄（三）', en: 'Activity Log III', badge: 'front' },
-  { id: 'p49', page: '49', label: '活動紀錄（四）', en: 'Activity Log IV', badge: 'front' },
-  { id: 'p50', page: '50', label: '總領袖獎章簡介', en: "Chief Scout's Award", badge: 'L5' },
-  { id: 'p51', page: '51', label: '考驗計劃', en: 'Assessment Plan', badge: 'L5' },
-  { id: 'p52', page: '52', label: 'A 戶外挑戰', en: 'A · Outdoor Challenge', badge: 'L5' },
-  { id: 'p53', page: '53', label: 'B 個人發展', en: 'B · Personal Development', badge: 'L5' },
-  { id: 'p54', page: '54', label: 'C 領導才與靈性發展', en: 'C · Leadership & Spiritual', badge: 'L5' },
-  { id: 'p55', page: '55', label: 'D 服務與環境', en: 'D · Service & Environment', badge: 'L5' },
-  { id: 'p56', page: '56', label: 'E 國際視野', en: 'E · International Outlook', badge: 'L5' },
-  { id: 'p57', page: '57', label: 'F 探索新知', en: 'F · New Knowledge', badge: 'L5' },
-  { id: 'p58', page: '58', label: '領導才訓練與服務', en: 'Leadership Training & Service', badge: 'L5' },
-  { id: 'p59', page: '59', label: '區總監接見', en: 'District Review', badge: 'L5' },
-  { id: 'p60', page: '60', label: '地域接見', en: 'Regional Review', badge: 'L5' },
-  { id: 'p61', page: '61', label: '完成紀錄與提名', en: 'Completion & Nomination', badge: 'L5' },
-  { id: 'p62', page: '62', label: '頒發', en: 'Presentation', badge: 'L5' },
-  { id: 'p63', page: '63', label: '制服及徽章位置', en: 'Uniform & Badges', badge: 'front' },
-  { id: 'p64', page: '64', label: '童軍誓詞與規律', en: 'Promise & Law', badge: 'front' },
-  { id: 'p65', page: '65', label: '進度總覽', en: 'Progress Summary', badge: 'front' },
-  { id: 'p66', page: '66', label: '使用說明', en: 'How to Use', badge: 'front' },
+  ...OFFICIAL_PAGES.map((pg) => ({
+    id: pg.id, page: pg.page, label: pg.zh, en: pg.en,
+    group: pg.group, kind: pg.kind, badge: pg.badge,
+  })),
   { id: 'appendix', page: '—', label: '數位附錄', en: 'Digital Appendix', digital: true },
 ];
 
 export const PAGE_TOTAL = SECTIONS.filter((s) => !s.digital).length;
+
+// ------------------------------------------------------------------ 頁碼遷移
+// 專科徽章頁已移到總領袖獎章之後（舊 p40–p49 → p24–p33；舊 p50–p62 → p34–p46；
+// 舊 p24–p39 → p47–p62）。以 pages.pNN 儲存的逐頁雜項按此表搬遷一次（以 meta.pagev 標記）。
+export const V1_PAGE_MAP = {
+  p40: 'p24', p41: 'p25', p42: 'p26', p43: 'p27', p44: 'p28', p45: 'p29',
+  p46: 'p30', p47: 'p31', p48: 'p32', p49: 'p33',
+  p50: 'p34', p51: 'p35', p52: 'p36', p53: 'p37', p54: 'p38', p55: 'p39',
+  p56: 'p40', p57: 'p41', p58: 'p42', p59: 'p43', p60: 'p44', p61: 'p45', p62: 'p46',
+  p24: 'p47', p25: 'p48', p26: 'p49', p27: 'p50', p28: 'p51', p29: 'p52',
+  p30: 'p53', p31: 'p54', p32: 'p55', p33: 'p56', p34: 'p57', p35: 'p58',
+  p36: 'p59', p37: 'p60', p38: 'p61', p39: 'p62',
+};
+
+// 舊制 p01–p66（第一代頁碼）→ 官方 p001–p110（「繼續上次」定位用 best-effort 對應）。
+export const PAGE_ID_MIGRATION = {
+  p01: 'p001', p02: 'p002', p03: 'p003', p04: 'p004', p05: 'p005', p06: 'p006', p07: 'p109',
+  p08: 'p012', p09: 'p013',
+  p10: 'p016', p11: 'p021', p12: 'p021', p13: 'p022',
+  p14: 'p025', p15: 'p032', p16: 'p034', p17: 'p035', p18: 'p038',
+  p19: 'p040', p20: 'p047', p21: 'p050', p22: 'p052', p23: 'p058',
+  p24: 'p008', p25: 'p013', p26: 'p014', p27: 'p104', p28: 'p108', p29: 'p107',
+  p30: 'p106', p31: 'p107', p32: 'p108', p33: 'p109',
+  p34: 'p060', p35: 'p060', p36: 'p061', p37: 'p065', p38: 'p068', p39: 'p069',
+  p40: 'p073', p41: 'p074', p42: 'p075', p43: 'p075', p44: 'p075', p45: 'p075', p46: 'p075',
+  p47: 'p078', p48: 'p078', p49: 'p078', p50: 'p078',
+  p51: 'p079', p52: 'p079', p53: 'p079', p54: 'p079',
+  p55: 'p080', p56: 'p080', p57: 'p081', p58: 'p081', p59: 'p081',
+  p60: 'p082', p61: 'p104', p62: 'p104',
+  p63: 'appendix', p64: 'p009', p65: 'appendix', p66: 'appendix',
+};
+
+export function migratePageId(id, pagev) {
+  let out = id;
+  if (pagev == null || Number(pagev) < 2) out = V1_PAGE_MAP[out] || out;
+  return PAGE_ID_MIGRATION[out] || out;
+}
+
+/** 把 v1.0.0 頁碼的 pages.* 搬到 v1.1 頁碼（只對 pagev < 2 的舊書跑一次）。
+ *  來源與目標有重疊（如 p42 既是來源又是目標），因此先全部讀出、刪掉來源再寫入。 */
+export function migrateStoredPages(pages, meta) {
+  if (!pages || typeof pages !== 'object' || (meta?.pagev != null && Number(meta.pagev) >= 2)) return pages || {};
+  const moves = Object.keys(pages).filter((k) => V1_PAGE_MAP[k] && V1_PAGE_MAP[k] !== k);
+  if (!moves.length) return { ...pages };
+  const next = { ...pages };
+  const carried = moves.map((k) => [V1_PAGE_MAP[k], next[k]]);
+  for (const k of moves) delete next[k];
+  for (const [dest, value] of carried) next[dest] = value;
+  return next;
+}
+
+const rowHasValue = (r) =>
+  r && typeof r === 'object' && Object.values(r).some((v) => String(v ?? '').trim() !== '');
+const mapRows = (rows, fn) => (Array.isArray(rows) ? rows.map(fn).filter(rowHasValue) : []);
+
+/** 舊單行章級完成 → 全文獎章分項回填對照（otherBadges 鍵 → 全文獎章）。 */
+export const SPOTLIGHT_BACKFILL = {
+  'SC-OTH-002': 'OT-LD',
+  'SC-OTH-001': 'OT-SF',
+  'SC-OTH-008': 'OT-VS',
+  'SC-OTH-005': 'OT-RG',
+  'SC-OTH-004': 'OT-CM',
+};
+
+/** v1.x → v2（pagev 3）：舊制頁作用域數據搬入官方頁鍵；舊鍵原位保留，絕不刪除。
+ *  progress.*（L1–L5）與 otherBadges.* 按題鍵儲存，換頁零遷移，此處只做：
+ *  宣誓 p26→p014、續期 renewals→p006、活動／服務／獎勵行→p104／p106–p109，
+ *  以及全文獎章舊單行完成→新分項同日期回填。 */
+export function migrateV2toV3(book) {
+  if (!book || typeof book !== 'object') return book;
+  if (Number(book?.meta?.pagev) >= 3) return book;
+  const pages = { ...(book.pages || {}) };
+  const p26 = pages.p26 || {};
+  if (!pages.p014 && (p26.investitureDate || p26.investingLeader)) {
+    pages.p014 = {
+      investitureDate: p26.investitureDate || '',
+      investingLeader: p26.investingLeader || '',
+    };
+  }
+  if (p26.membershipDate && !pages.award_L1?.date) {
+    pages.award_L1 = { ...(pages.award_L1 || {}), date: p26.membershipDate };
+  }
+  if (book.member?.dateInvestiture && !pages.p014?.investitureDate) {
+    pages.p014 = { ...(pages.p014 || {}), investitureDate: book.member.dateInvestiture };
+  }
+  if (!pages.p006?.rows?.length && Array.isArray(book.renewals) && book.renewals.length) {
+    pages.p006 = { ...(pages.p006 || {}), rows: book.renewals.filter(rowHasValue) };
+  }
+  const pushRows = (key, rows) => {
+    if (!rows.length) return;
+    pages[key] = { ...(pages[key] || {}), rows: [...(pages[key]?.rows || []), ...rows] };
+  };
+  pushRows('p106', mapRows(pages.p30?.log, (r) => ({
+    date: r.date || '', place: r.venue || '', brief: r.activity || '', nights: '',
+  })));
+  pushRows('p107', [
+    ...mapRows(pages.p29?.trips, (r) => ({
+      date: r.date || '', place: '', brief: r.route || '', km: r.distance || '',
+    })),
+    ...mapRows(pages.p31?.log, (r) => ({
+      date: r.date || '', place: r.venue || '', brief: r.activity || '', km: '',
+    })),
+  ]);
+  pushRows('p108', [
+    ...mapRows(pages.p28?.experiences, (r) => ({
+      date: r.date || '', org: '', brief: r.experience || '', certNo: '',
+    })),
+    ...mapRows(pages.p32?.log, (r) => ({
+      date: r.date || '', org: '', brief: r.activity || '', certNo: '',
+    })),
+  ]);
+  pushRows('p109', [
+    ...mapRows(book.service, (r) => ({
+      date: r.date || '', org: '', brief: r.activity || '', hours: r.hours || '',
+    })),
+    ...mapRows(pages.p33?.log, (r) => ({
+      date: r.date || '', org: '', brief: r.activity || '', hours: '',
+    })),
+  ]);
+  pushRows('p104', [
+    ...mapRows(pages.p27?.awards, (r) => ({
+      badge: r.award || '', examiner: r.presentedBy || '', date: r.date || '',
+    })),
+    ...mapRows(book.awardsLog, (r) => ({
+      badge: r.award || '', examiner: r.presentedBy || '', date: r.date || '',
+    })),
+  ]);
+  book.pages = pages;
+  if (Array.isArray(book.transfers)) {
+    book.transfers = book.transfers.map((t) =>
+      t && !t.group
+        ? { ...t, group: t.toGroup || t.fromGroup || '', leaderName: '', leaderPhone: '' }
+        : t,
+    );
+  }
+  const progress = { ...(book.progress || {}) };
+  const other = book.otherBadges || {};
+  for (const [otherId, awardId] of Object.entries(SPOTLIGHT_BACKFILL)) {
+    const entry = other[otherId];
+    if (!entry?.date) continue;
+    const award = SPOTLIGHT_AWARDS.find((a) => a.id === awardId);
+    if (!award) continue;
+    for (const item of award.segments.flatMap((sg) => sg.items)) {
+      if (!progress[item.id]?.date) progress[item.id] = { date: entry.date, carriedFromBadge: otherId };
+    }
+  }
+  book.progress = progress;
+  book.meta = { ...(book.meta || {}), pagev: 3 };
+  return book;
+}
 
 // ------------------------------------------------------------------ 選修項目
 // 2026 修訂版：戶外／海上／航空三選一（各進度性獎章選項須相同；
@@ -146,78 +263,61 @@ export function electiveChoice(book, awardId) {
 
 // ------------------------------------------------------------------ 獎章頁切片
 // 每個獎章頁只顯示所屬分段／細項；測試會驗證切片覆蓋全部細項、不重不漏。
-export const PAGE_SLICES = {
-  p08: { award: 'L1', items: ['L1-M1', 'L1-M2', 'L1-M3', 'L1-M4', 'L1-M5', 'L1-M6'] },
-  p09: { award: 'L1', items: ['L1-M7', 'L1-M8', 'L1-M9', 'L1-M10', 'L1-M11'] },
-  p10: { award: 'L2', segments: ['L2-A'] },
-  p11: { award: 'L2', segments: ['L2-B'] },
-  p12: { award: 'L2', segments: ['L2-C'] },
-  p13: { award: 'L2', segments: ['L2-D'] },
-  p14: { award: 'L3', segments: ['L3-A'] },
-  p15: { award: 'L3', segments: ['L3-B'] },
-  p16: { award: 'L3', segments: ['L3-C'] },
-  p17: { award: 'L3', segments: ['L3-D'] },
-  p18: { award: 'L3', segments: ['L3-E', 'L3-F'] },
-  p19: { award: 'L4', segments: ['L4-A'] },
-  p20: { award: 'L4', segments: ['L4-B'] },
-  p21: { award: 'L4', segments: ['L4-C'] },
-  p22: { award: 'L4', segments: ['L4-D'] },
-  p23: { award: 'L4', segments: ['L4-E', 'L4-F'] },
-  p52: { award: 'L5', segments: ['L5-A'] },
-  p53: { award: 'L5', segments: ['L5-B'] },
-  p54: { award: 'L5', segments: ['L5-C'] },
-  p55: { award: 'L5', segments: ['L5-D'] },
-  p56: { award: 'L5', segments: ['L5-E'] },
-  p57: { award: 'L5', segments: ['L5-F'] },
-};
+// ------------------------------------------------------------------ 獎章頁切片
+// 每個獎章頁只顯示紙本歸位的細項；橫跨頁的細項在次頁複示（continued，同鍵不重計）。
+// 測試會驗證主切片覆蓋全部細項、不重不漏。
+export const PAGE_SLICES = Object.fromEntries(
+  OFFICIAL_PAGES.filter((pg) => pg.kind === 'award' && pg.items.length).map((pg) => [
+    pg.id, { award: pg.award, items: pg.items },
+  ]),
+);
+
+/** 橫跨頁複示的細項（key 同主切片，顯示用，不納入覆蓋計算）。 */
+export const PAGE_CONTINUED = Object.fromEntries(
+  OFFICIAL_PAGES.filter((pg) => pg.kind === 'award' && pg.continued.length).map((pg) => [
+    pg.id, { award: pg.award, items: pg.continued },
+  ]),
+);
 
 /** 專科徽章頁切片：每組按來源次序分頁（頁內搜尋跨全組時仍可找到）。 */
+/** 專科徽章頁切片：紙本一頁一組，整組逐行（p104 另加自由行，見頁面）。 */
 export const OTHER_PAGE_SLICES = {
-  p24: { groups: ['interest'], slice: [0, 9] },
-  p25: { groups: ['interest'], slice: [9, 18] },
-  p26: { groups: ['interest'], slice: [18, 27] },
-  p27: { groups: ['interest'], slice: [27, 99] },
-  p28: { groups: ['pursuit'], slice: [0, 10] },
-  p29: { groups: ['pursuit'], slice: [10, 20] },
-  p30: { groups: ['pursuit'], slice: [20, 30] },
-  p31: { groups: ['pursuit'], slice: [30, 99] },
-  p32: { groups: ['service'], slice: [0, 10] },
-  p33: { groups: ['service'], slice: [10, 99] },
-  p34: { groups: ['instructor'], slice: [0, 9] },
-  p35: { groups: ['instructor'], slice: [9, 18] },
-  p36: { groups: ['instructor'], slice: [18, 99] },
-  p37: { groups: ['sea', 'air'], slice: [0, 99] },
-  p38: { groups: ['other'], slice: [0, 9] },
-  p39: { groups: ['other'], slice: [9, 99] },
+  p078: { groups: ['interest'] },
+  p079: { groups: ['pursuit'] },
+  p080: { groups: ['service'] },
+  p081: { groups: ['instructor'] },
+  p082: { groups: ['sea', 'air'] },
+  p104: { groups: ['other'] },
 };
+
+/** 已升格為全文獎章、不再列於其他徽章名表的舊行（舊數據保留，只是不再顯示）。 */
+export const MIGRATED_OTHER_IDS = ['SC-OTH-001', 'SC-OTH-002', 'SC-OTH-004', 'SC-OTH-005', 'SC-OTH-008'];
+
+export function sliceAwardItems(award, ids) {
+  if (!award || !ids) return award;
+  const wanted = new Set(ids);
+  return {
+    ...award,
+    segments: award.segments
+      .map((sg) => ({ ...sg, items: sg.items.filter((i) => wanted.has(i.id)) }))
+      .filter((sg) => sg.items.length),
+  };
+}
 
 export function sliceAward(award, pageId) {
   const spec = PAGE_SLICES[pageId];
   if (!award || !spec || award.id !== spec.award) return award;
-  if (spec.items) {
-    const wanted = new Set(spec.items);
-    return {
-      ...award,
-      segments: award.segments
-        .map((s) => ({ ...s, items: s.items.filter((i) => wanted.has(i.id)) }))
-        .filter((s) => s.items.length),
-    };
-  }
-  if (spec.segments) {
-    const wanted = new Set(spec.segments);
-    return { ...award, segments: award.segments.filter((s) => wanted.has(s.code)) };
-  }
-  return award;
+  return sliceAwardItems(award, spec.items);
 }
 
 export function sliceOtherBadges(pageId) {
   const spec = OTHER_PAGE_SLICES[pageId];
   if (!spec) return [];
-  const [from, to] = spec.slice;
-  return OTHER_BADGES.filter((b) => spec.groups.includes(b.group)).slice(from, to);
+  return OTHER_BADGES.filter(
+    (b) => spec.groups.includes(b.group) && (b.group !== 'other' || !MIGRATED_OTHER_IDS.includes(b.id)),
+  );
 }
 
-// ------------------------------------------------------------------ 身分
 /** 紀錄冊編號 ＝ 童軍成員編號 SCOUT ID（與 scoutbadge 完全統一）。 */
 export function scoutId(bookOrMember) {
   const m = bookOrMember?.member || bookOrMember || {};
@@ -279,7 +379,7 @@ export function ageInMonths(dob, refDate = new Date()) {
 
 export function newBook(partial = {}) {
   const now = new Date().toISOString();
-  const { member: partialMember, meta: partialMeta, ...rest } = partial;
+  const { member: partialMember, meta: partialMeta, scouting: partialScouting, ...rest } = partial;
   const book = {
     version: 1,
     appVersion: APP_VERSION,
@@ -289,13 +389,16 @@ export function newBook(partial = {}) {
       scoutId: '',
       memberNo: '',
       hkidPrefix: '',
+      passportNo: '',
       gender: '',
       photo: null,
       dob: '',
+      birthPlace: '',
       school: '',
       schoolLevel: '',
       religion: '',
       phone: '',
+      bloodType: '',
       email: '',
       addressZh: '',
       addressEn: '',
@@ -304,6 +407,7 @@ export function newBook(partial = {}) {
       parentPhone: '',
       emergencyName: '',
       emergencyPhone: '',
+      emergencyAddr: '',
       allergies: '',
       troop: '',
       patrol: '',
@@ -312,6 +416,7 @@ export function newBook(partial = {}) {
       region: '',
       sponsoringAuthority: '',
       groupAddress: '',
+      groupPhone: '',
       gsl: '',
       gslPhone: '',
       sl: '',
@@ -327,6 +432,9 @@ export function newBook(partial = {}) {
       scout: { from: '', to: '', unit: '', post: '', award: '' },
       venture: { from: '', to: '', unit: '', post: '', award: '' },
       rover: { from: '', to: '', unit: '', post: '', award: '' },
+      scoutRanks: { aplFrom: '', aplTo: '', plFrom: '', plTo: '', splFrom: '', splTo: '' },
+      stars: { y1: '', y2: '', y3: '', y4: '', y5: '' },
+      ...(partialScouting || {}),
     },
     transfers: [],
     addressChanges: [],
@@ -344,6 +452,9 @@ export function newBook(partial = {}) {
   };
   syncIdentity(book.member);
   if (book.member.hkidPrefix) book.member.hkidPrefix = sanitizeHkidPrefix(book.member.hkidPrefix);
+  book.pages = migrateStoredPages(book.pages, book.meta);
+  migrateV2toV3(book);
+  book.meta.pagev = 3;
   return book;
 }
 
@@ -377,7 +488,7 @@ export function interestProgress(book, segment) {
 }
 
 export function badgeStats(book, awardId) {
-  const award = ALL_AWARDS.find((b) => b.id === awardId);
+  const award = ALL_TRACKED_AWARDS.find((b) => b.id === awardId);
   if (!award) return { total: 0, done: 0, percent: 0, segments: [], award: null, complete: false };
 
   const segments = award.segments.map((segment) => {
@@ -431,8 +542,9 @@ export function allStats(book) {
 }
 
 export function latestRenewal(book) {
+  const rows = book?.pages?.p006?.rows?.length ? book.pages.p006.rows : book?.renewals || [];
   return (
-    [...(book?.renewals || [])]
+    [...rows]
       .filter((r) => r && (r.validUntil || r.date))
       .sort((a, b) =>
         String(b.validUntil || b.date).localeCompare(String(a.validUntil || a.date)),
@@ -449,17 +561,18 @@ export function membershipStatus(book) {
   };
 }
 
-/** 總領袖獎章進度事實（年齡、高級獎章完成度、領導才訓練班證書），供第 50 頁顯示。 */
+/** 總領袖獎章進度事實（年齡、高級獎章完成度、領導才訓練班證書），供目錄及附錄顯示。 */
 export function chiefScoutReadiness(book) {
   const advanced = badgeStats(book, 'L4');
-  const leadership = book?.pages?.p58?.leadership || {};
+  const leadership = book?.pages?.p42?.leadership || {};
+  const ldCourse = book?.progress?.['OT-LD-A6'] || {};
   return {
     age: ageFromDob(book?.member?.dob),
     advancedComplete: advanced.complete,
     advancedDone: advanced.done,
     advancedTotal: advanced.total,
     leadershipCourse: leadership.courseCode || '',
-    leadershipDate: leadership.date || '',
+    leadershipDate: leadership.date || ldCourse.date || '',
     leadershipCert: leadership.certNo || '',
   };
 }
@@ -489,7 +602,12 @@ function isConfirmedEntry(val) {
 }
 
 function itemLabel(bookId) {
-  return ITEM_INDEX[bookId]?.name || OTHER_BADGES.find((b) => b.id === bookId)?.name || bookId;
+  if (ITEM_INDEX[bookId]) return ITEM_INDEX[bookId].name;
+  const spot = SPOTLIGHT_AWARDS.flatMap((a) => a.segments.flatMap((sg) => sg.items)).find(
+    (i) => i.id === bookId,
+  );
+  if (spot) return spot.name;
+  return OTHER_BADGES.find((b) => b.id === bookId)?.name || bookId;
 }
 
 /**

@@ -281,7 +281,7 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
   const troopEntries = Object.entries(troops);
 
   return (
-    <section className="appxcard cubsync">
+    <section className="appxcard scoutsync">
       <h3>
         <Icon name="verified" size={16} />{' '}
         {isEn
@@ -295,7 +295,7 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
       </p>
 
       {bridge === 'unavailable' && (
-        <div className="cubsync__offline">
+        <div className="scoutsync__offline">
           <Icon name="info" size={15} />
           <div>
             <strong>{isEn ? 'Running in standalone mode' : '現時以獨立模式運作'}</strong>
@@ -311,7 +311,7 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
         </div>
       )}
 
-      <div className="cubsync__stats">
+      <div className="scoutsync__stats">
         <span>
           <b>{confirmedInBookCount}</b>{' '}
           {isEn ? 'Confirmed / Signed in BOOK' : '項已獲核實／領袖簽署'}
@@ -391,8 +391,8 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
       </div>
 
       {showLogin && !session && (
-        <form className="cubsync__login" onSubmit={handleLogin}>
-          <div className="cubsync__fields">
+        <form className="scoutsync__login" onSubmit={handleLogin}>
+          <div className="scoutsync__fields">
             <label>
               <span>{isEn ? 'Group / Unit' : '所屬旅團'}</span>
               {troopEntries.length > 0 ? (
@@ -446,7 +446,7 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
       )}
 
       {/* 離線 JSON 交換 */}
-      <div className="appxbtns cubsync__files">
+      <div className="appxbtns scoutsync__files">
         <button
           type="button"
           className="btn btn--ghost btn--sm"
