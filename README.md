@@ -73,6 +73,15 @@ node scripts/preflight_v1.0.mjs .
 2. **`SCOUTBADGE_ORIGIN`**（選填，預設 `https://scoutbadge.vercel.app`，待核實）：
    - 供成員在「數位附錄」一鍵連接自己的 `scoutbadge` 帳戶（如有自建網址可改；個別旅團另可用 `TROOP_<id>_*` 覆寫，見 [`.env.example`](.env.example)）。
 
+### 正式網址與圖標更新
+
+- **本 app 正式網址**：`https://scoutbook-five.vercel.app/`（`index.html` 的 `canonical`、`og:url`、`og:image` 三者必須同源，測試會檢查）。
+- **換圖標後，主畫面圖示不會自動更新** —— Android 取 manifest 的 icon、iOS 取 `apple-touch-icon`，兩者都是「安裝嗰一刻」的快照：
+  1. Android／Chrome：長按圖示 → 應用程式資訊 → 解除安裝 → 重新「安裝應用程式」；
+  2. iOS：長按 → 移除書籤 → Safari 對本站「清除瀏覽資料」→ 再「加入主畫面」；
+  3. 瀏覽器分頁 favicon 只需強制重新整理（檔名帶 `-v2`，已破 cache）。
+- 圖標一律經 `npm run icons` 產生（`scripts/generate_icons.mjs`），檔名帶 `-v2` 因為 `/icons/*` 設了 `immutable` cache。
+
 ---
 
 ## 文件索引
