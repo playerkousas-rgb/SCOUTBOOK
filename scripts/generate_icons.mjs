@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 /**
- * Generate the complete 9-file G11 icon suite in web/public/icons/
- * Theme: Scout deep forest green cloth (#08180f -> #2a6b47) + Scout gold (#e6a800 / #f6e6bb)
- * + ivory page edge (#f8f3e8). Gold is used on dark green (high contrast); never white on gold.
- * Zero external npm dependencies (uses node:zlib + pure PNG/ICO encoder).
+ * SCOUTBOOK 圖標產生器（G11 標準 · 家族版式）
+ *
+ * 設計基因（對齊 VSBOOK / ROVERBOOK 實際出街圖標，非只換色）：
+ *   圓角布色方塊（radius 0.19）＋ 內嵌金線（inset 0.04 / stroke 0.017）
+ *   ＋ 單色金浮雕：上方「水滴環」（家族共用記號）＋ 下方支部圖案。
+ *   SCOUTBOOK 的支部圖案＝打開的紀錄冊（VSBOOK 用「V」、ROVERBOOK 用「缽＋橫桿」）。
+ *
+ * 規格（docs/33-icon-standard.md）：
+ *   - 9 個 PNG／ICO，不准 SVG；16×16 手繪；maskable 主體收在中央 66%；
+ *   - 顏色 ≥ 4 隻；滿版（full bleed）；扁平色，只有布面一層漸變；
+ *   - 檔名帶 `-v2`：/icons/* 設 immutable cache，換圖必換名。
+ *
+ * 零外部 npm 依賴（node:zlib + 內建 PNG/ICO 編碼器）。
  */
-import { mkdirSync, writeFileSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, statSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
@@ -13,6 +22,8 @@ import { deflateSync } from 'node:zlib';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'web', 'public', 'icons');
 mkdirSync(outDir, { recursive: true });
+
+/* ---------------------------------------------------------------- PNG／ICO */
 
 const CRC_TABLE = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
@@ -30,36 +41,40 @@ function crc32(buf) {
 function pngChunk(type, data) {
   const len = Buffer.alloc(4);
   len.writeUInt32BE(data.length, 0);
-  const typeBuf = Buffer.from(type, 'ascii');
-  const body = Buffer.concat([typeBuf, data]);
+  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
   const crc = Buffer.alloc(4);
   crc.writeUInt32BE(crc32(body), 0);
   return Buffer.concat([len, body, crc]);
+}
+
+function quantize(rgba, step) {
+  for (let i = 0; i < rgba.length; i += 4) {
+    for (let k = 0; k < 3; k++) rgba[i + k] = Math.round(rgba[i + k] / step) * step;
+  }
+  return rgba;
 }
 
 function encodePng(w, h, rgba) {
   const stride = w * 4;
   const raw = Buffer.alloc((stride + 1) * h);
   for (let y = 0; y < h; y++) {
-    const rowOff = y * (stride + 1);
-    raw[rowOff] = 1; // Sub filter for smooth gradients
+    const off = y * (stride + 1);
+    raw[off] = 1; // Sub filter
     for (let x = 0; x < stride; x++) {
-      const cur = rgba[y * stride + x];
-      const left = x >= 4 ? rgba[y * stride + x - 4] : 0;
-      raw[rowOff + 1 + x] = (cur - left) & 0xff;
+      raw[off + 1 + x] = (rgba[y * stride + x] - (x >= 4 ? rgba[y * stride + x - 4] : 0)) & 0xff;
     }
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
   ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
-  ihdr[10] = 0;
-  ihdr[11] = 0;
-  ihdr[12] = 0;
-  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  const idat = deflateSync(raw, { level: 9 });
-  return Buffer.concat([sig, pngChunk('IHDR', ihdr), pngChunk('IDAT', idat), pngChunk('IEND', Buffer.alloc(0))]);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk('IHDR', ihdr),
+    pngChunk('IDAT', deflateSync(raw, { level: 9 })),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 function encodeIco(entries) {
@@ -73,8 +88,6 @@ function encodeIco(entries) {
     const dir = Buffer.alloc(16);
     dir[0] = size >= 256 ? 0 : size;
     dir[1] = size >= 256 ? 0 : size;
-    dir[2] = 0;
-    dir[3] = 0;
     dir.writeUInt16LE(1, 4);
     dir.writeUInt16LE(32, 6);
     dir.writeUInt32LE(png.length, 8);
@@ -84,6 +97,8 @@ function encodeIco(entries) {
   }
   return Buffer.concat([header, ...dirs, ...entries.map((e) => e.png)]);
 }
+
+/* ------------------------------------------------------------------- 繪圖 */
 
 const clamp = (v, lo = 0, hi = 1) => (v < lo ? lo : v > hi ? hi : v);
 const mix = (a, b, t) => a + (b - a) * t;
@@ -107,325 +122,291 @@ function sdSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(pax - bax * h, pay - bay * h);
 }
 
-/** Signed distance to a stylized Scout fleur-de-lis + record-book motif in normalized [-1, 1] coords */
-function emblemAlpha(nx, ny, aa) {
-  // Center spear petal (graceful pointed teardrop)
-  const py = ny + 0.05;
-  const t = clamp((py + 0.48) / 0.76);
-  const halfW = 0.165 * Math.sin(Math.pow(t, 0.78) * Math.PI);
-  const dCenter = Math.hypot(Math.max(Math.abs(nx) - halfW, 0), py < -0.48 ? -0.48 - py : py > 0.28 ? py - 0.28 : 0)
-    - (Math.abs(nx) < halfW && py >= -0.48 && py <= 0.28 ? Math.min(halfW - Math.abs(nx), py + 0.48, 0.28 - py) : 0);
-
-  // Left & right curved side petals
-  const ax = Math.abs(nx);
-  const dx = ax - 0.23;
-  const dy = py + 0.02 - 0.35 * dx * dx;
-  const rot1 = dx * 0.82 + dy * 0.57;
-  const rot2 = -dx * 0.57 + dy * 0.82;
-  const dSide = Math.hypot(rot1 / 0.13, rot2 / 0.27) - 1;
-  const dSidePx = dSide * 0.16;
-
-  // Tie band across petals
-  const dBand = sdRoundBox(nx, py, 0, 0.20, 0.25, 0.045, 0.02);
-
-  // Base tail trifoil
-  const dBaseCenter = sdSegment(nx, py, 0, 0.22, 0, 0.40) - 0.048;
-  const dBaseSide = sdSegment(ax, py, 0.05, 0.23, 0.18, 0.37) - 0.042;
-
-  const dFleur = Math.min(dCenter, dSidePx, dBand, dBaseCenter, dBaseSide);
-  return 1 - smooth(-aa, aa, dFleur);
+function sdTriangle(px, py, ax, ay, bx, by, cx, cy) {
+  const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+  const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+  const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+  const d = Math.min(sdSegment(px, py, ax, ay, bx, by), sdSegment(px, py, bx, by, cx, cy), sdSegment(px, py, cx, cy, ax, ay));
+  return hasNeg && hasPos ? d : -d;
 }
 
-/** Render square icon (maskable = true shrinks book/emblem inside central 60% <= 66% safe zone) */
-function renderSquareIcon(size, { maskable = false } = {}) {
+/** 凸四邊形（兩種繞向都支援） */
+function sdQuad(px, py, ax, ay, bx, by, cx, cy, dx, dy) {
+  const pts = [[ax, ay], [bx, by], [cx, cy], [dx, dy]];
+  let out = Infinity;
+  let allPos = true;
+  let allNeg = true;
+  for (let i = 0; i < 4; i++) {
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[(i + 1) % 4];
+    out = Math.min(out, sdSegment(px, py, x1, y1, x2, y2));
+    const cross = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1);
+    if (cross < 0) allPos = false;
+    if (cross > 0) allNeg = false;
+  }
+  return allPos || allNeg ? -out : out;
+}
+
+/* 家族共用記號：水滴環（外尖上、內孔同形） */
+const RING = { cx: 0.5, cy: 0.4, r: 0.15, stroke: 0.072 };
+
+function sdTeardrop(px, py, cx, cy, r) {
+  const d = Math.hypot(px - cx, py - cy) - r;
+  const apex = cy - r * 1.95;
+  const t = sdTriangle(px, py, cx - r * 0.54, cy - r * 0.86, cx + r * 0.54, cy - r * 0.86, cx, apex);
+  return Math.min(d, t);
+}
+
+function dropletRing(x, y) {
+  const outer = sdTeardrop(x, y, RING.cx, RING.cy, RING.r);
+  const inner = sdTeardrop(x, y, RING.cx, RING.cy + 0.004, RING.r - RING.stroke);
+  return Math.max(outer, -inner);
+}
+
+/* SCOUTBOOK 支部圖案：打開的紀錄冊（兩頁 + 中縫） */
+function openBook(x, y) {
+  const left = sdQuad(x, y, 0.272, 0.574, 0.488, 0.618, 0.488, 0.812, 0.272, 0.768);
+  const right = sdQuad(x, y, 0.728, 0.574, 0.512, 0.618, 0.512, 0.812, 0.728, 0.768);
+  return Math.min(left, right);
+}
+
+function glyph(x, y) {
+  return Math.min(dropletRing(x, y), openBook(x, y));
+}
+
+/** 布面色票：4 色以上（淺綠、中綠、深綠、金、淺金、象牙） */
+const C = {
+  clothLight: [47, 115, 78],
+  clothMid: [28, 82, 54],
+  clothDeep: [11, 36, 23],
+  gold: [227, 192, 122],
+  goldLight: [246, 230, 187],
+  goldDeep: [179, 141, 66],
+  ivory: [247, 242, 231],
+};
+
+function paintTile(u, v) {
+  const glow = clamp(1 - Math.hypot((u - 0.3) * 1.15, (v - 0.2) * 1.15));
+  const diag = clamp(u * 0.45 + v * 0.55);
+  return [
+    mix(mix(C.clothMid[0], C.clothDeep[0], diag * 0.85), C.clothLight[0], glow * 0.6),
+    mix(mix(C.clothMid[1], C.clothDeep[1], diag * 0.85), C.clothLight[1], glow * 0.6),
+    mix(mix(C.clothMid[2], C.clothDeep[2], diag * 0.85), C.clothLight[2], glow * 0.6),
+  ];
+}
+
+function paintGold(gy) {
+  const t = clamp((gy - 0.18) / 0.64);
+  return [mix(C.goldLight[0], C.goldDeep[0], t * 0.55), mix(C.goldLight[1], C.goldDeep[1], t * 0.55), mix(C.goldLight[2], C.goldDeep[2], t * 0.55)];
+}
+
+/** 方形圖標（maskable：圖案收在中央 66% 安全區，布面照樣滿版） */
+function renderSquare(size, { maskable = false, rounded = true } = {}) {
   const rgba = new Uint8Array(size * size * 4);
-  const scale = maskable ? 0.58 : 0.78;
-  const aa = 2.2 / (size * scale);
-
+  const scale = maskable ? 0.665 / 0.82 : 1;
+  const px = 1.15 / size;
   for (let y = 0; y < size; y++) {
-    const v = y / (size - 1);
     for (let x = 0; x < size; x++) {
-      const u = x / (size - 1);
-      // Full-bleed deep forest green radial + diagonal gradient (Scout cloth)
-      const rad = Math.hypot(u - 0.35, v - 0.22);
-      const glow = clamp(1 - rad * 1.15);
+      const u = (x + 0.5) / size;
+      const v = (y + 0.5) / size;
+      const gx = (u - 0.5) / scale + 0.5;
+      const gy = (v - 0.5) / scale + 0.5;
 
-      let r = mix(8, 42, glow);
-      let g = mix(24, 107, glow);
-      let b = mix(15, 71, glow);
+      let [r, g, b] = paintTile(u, v);
+      const aTile = rounded ? 1 - smooth(-px, px, sdRoundBox(u, v, 0.5, 0.5, 0.5, 0.5, 0.192)) : 1;
 
-      // Normalized [-1, 1] coords scaled by safe-zone factor
-      const nx = (u * 2 - 1) / scale;
-      const ny = (v * 2 - 1) / scale;
+      // 內嵌金線
+      let aGold = 0;
+      if (rounded) {
+        const inset = sdRoundBox(u, v, 0.5, 0.5, 0.5 - 0.04, 0.5 - 0.04, 0.165);
+        aGold = (1 - smooth(-0.007, 0.007, Math.abs(inset) - 0.0085)) * 0.95;
+      }
 
-      // Book silhouette card inside safe zone
-      const dBook = sdRoundBox(nx, ny, 0, 0, 0.74, 0.86, 0.11);
-      const bookShadow = 1 - smooth(0.0, 0.12, sdRoundBox(nx, ny - 0.04, 0.02, 0, 0.75, 0.87, 0.12));
-      r = mix(r, 4, bookShadow * 0.45);
-      g = mix(g, 14, bookShadow * 0.45);
-      b = mix(b, 8, bookShadow * 0.45);
+      // 金浮雕
+      const aG = 1 - smooth(-1.3 / size, 1.3 / size, glyph(gx, gy));
+      const [gr, gg, gb] = paintGold(gy);
+      aGold = Math.max(aGold, aG);
+      r = mix(r, gr, aGold);
+      g = mix(g, gg, aGold);
+      b = mix(b, gb, aGold);
 
-      // Ivory page fore-edge peeking on right
-      const dPages = sdRoundBox(nx, ny, 0.05, 0.02, 0.73, 0.84, 0.09);
-      const aPages = 1 - smooth(-aa, aa, dPages);
-      r = mix(r, 244, aPages);
-      g = mix(g, 236, aPages);
-      b = mix(b, 218, aPages);
-
-      // Maroon hardbound cover plate
-      const aBook = 1 - smooth(-aa, aa, dBook);
-      const coverTone = clamp(1 - Math.hypot(nx + 0.25, ny + 0.35) * 0.55);
-      r = mix(r, mix(22, 47, coverTone), aBook);
-      g = mix(g, mix(66, 122, coverTone), aBook);
-      b = mix(b, mix(42, 82, coverTone), aBook);
-
-      // Darker stitched spine on left of book
-      const dSpine = Math.max(dBook, nx + 0.50);
-      const aSpine = 1 - smooth(-aa, aa, dSpine);
-      r = mix(r, 12, aSpine * 0.78);
-      g = mix(g, 42, aSpine * 0.78);
-      b = mix(b, 26, aSpine * 0.78);
-
-      // Gold foil border rule + spine groove
-      const dInnerFrame = Math.abs(sdRoundBox(nx, ny, 0.08, 0, 0.52, 0.70, 0.05)) - 0.018;
-      const aFrame = (1 - smooth(-aa, aa, dInnerFrame)) * aBook;
-
-      // Gold foil fleur-de-lis centered on the front cover
-      const aFleur = emblemAlpha((nx - 0.08) * 1.08, (ny + 0.03) * 1.08, aa * 1.1) * aBook;
-      // Gold horizontal title bar beneath emblem (symbolic, no tiny text)
-      const dRule = sdRoundBox(nx - 0.08, ny - 0.50, 0, 0, 0.30, 0.026, 0.013);
-      const aRule = (1 - smooth(-aa, aa, dRule)) * aBook;
-
-      const goldAmt = clamp(Math.max(aFrame * 0.85, aFleur, aRule));
-      const goldGrad = clamp(1 - (ny + 0.6) * 0.75);
-      const gr = mix(186, 246, goldGrad);
-      const gg = mix(142, 224, goldGrad);
-      const gb = mix(68, 168, goldGrad);
-
-      r = mix(r, gr, goldAmt);
-      g = mix(g, gg, goldAmt);
-      b = mix(b, gb, goldAmt);
-
-      const idx = (y * size + x) * 4;
-      rgba[idx] = clamp(Math.round(r), 0, 255);
-      rgba[idx + 1] = clamp(Math.round(g), 0, 255);
-      rgba[idx + 2] = clamp(Math.round(b), 0, 255);
-      rgba[idx + 3] = 255;
+      const i = (y * size + x) * 4;
+      rgba[i] = Math.round(r);
+      rgba[i + 1] = Math.round(g);
+      rgba[i + 2] = Math.round(b);
+      rgba[i + 3] = Math.round(aTile * 255);
     }
   }
+  if (size >= 512) quantize(rgba, 3);
   return encodePng(size, size, rgba);
 }
 
-/**
- * Hand-crafted 16x16 pixel-art icon (G11 rule: NEVER downscale 512->16; draw crisp pixel grid!)
- * Palette:
- *   M = Deep Maroon (#520f1e), B = Bright Maroon (#7d1c31), S = Spine (#380914),
- *   G = Bright Gold (#f3ddab), D = Warm Gold (#d4af61), P = Ivory Page (#f6efe0)
- */
+/* ---------------------------------------------------------- 16×16 手繪（不縮圖） */
+
+const PAL16 = {
+  d: [11, 36, 23, 255], // 深綠布
+  m: [28, 82, 54, 255], // 中綠布
+  l: [47, 115, 78, 255], // 淺綠布（左上受光）
+  g: [227, 192, 122, 255], // 金
+  G: [246, 230, 187, 255], // 淺金
+  i: [247, 242, 231, 255], // 象牙（內線）
+};
+
 function renderHandcrafted16() {
-  const PAL = {
-    S: [12, 42, 26, 255],
-    M: [28, 82, 54, 255],
-    B: [42, 107, 71, 255],
-    D: [184, 140, 48, 255],
-    G: [230, 168, 0, 255],
-    P: [246, 239, 224, 255],
-  };
+  // 手繪 16×16（唔准由 512 縮落嚟）：3 層＝布面／金水滴環／金書頁
   const GRID = [
-    'SSSSSSSSBBBBBBBB',
-    'SSBBBBBBBBBBBBMP',
-    'SSBBDDDDDDBBBBMP',
-    'SSBBDBGGGDBBBBMP',
-    'SSBBDBGGGDBBBBMP',
-    'SSBBDGGGGGBBBBMP',
-    'SSBBGGGGGGGBBBMP',
-    'SSBBGGBGGGBBBBMP',
-    'SSBBBBDDDDDBBBMP',
-    'SSBBBBBGGBBBBBMP',
-    'SSBBBBGDBGGBBBMP',
-    'SSBBBBBBBBBBBBMP',
-    'SSBBDDDDDDDDBBMP',
-    'SSBBBBBBBBBBBBMP',
-    'SSMMMMMMMMMMMMMP',
-    'SSSSSSSSPPPPPPPP',
+    'ddmmmmggggmmmmdd',
+    'dmmmmmmggmmmmmmd',
+    'mllmmmggggmmmmmm',
+    'mllmmggggggmmmmm',
+    'mllmmggmmggmmmmm',
+    'mllmmggmmggmmmmm',
+    'lmmmmggggggmmmmm',
+    'mmmmmmggggmmmmmm',
+    'mmmmmmmmmmmmmmmm',
+    'mmmmggggmggggmmm',
+    'mmmgggggmgggggmm',
+    'mmmgggggmgggggmm',
+    'mmmgggggmgggggmm',
+    'mmmgggggmgggggmm',
+    'dmmmmmmmmmmmmmmd',
+    'ddmmmmmmmmmmmmdd',
   ];
   const rgba = new Uint8Array(16 * 16 * 4);
   for (let y = 0; y < 16; y++) {
+    const row = GRID[y];
+    if (row.length !== 16) throw new Error(`16px 第 ${y} 行長度 ${row.length}，必須 16`);
     for (let x = 0; x < 16; x++) {
-      const c = PAL[GRID[y][x]] || PAL.M;
+      const c = PAL16[row[x]] || PAL16.m;
       const i = (y * 16 + x) * 4;
       rgba[i] = c[0];
       rgba[i + 1] = c[1];
       rgba[i + 2] = c[2];
-      rgba[i + 3] = 255;
+      rgba[i + 3] = c[3];
     }
   }
   return encodePng(16, 16, rgba);
 }
 
-/**
- * Render 1200x630 Open Graph preview card:
- * Left side: forest-green hardbound book icon; right side: clean ivory specimen card & Cub gold progress bars
- * (Quantized slightly so PNG stays < 65 KB while maintaining rich >=6 color palette).
- */
-function renderOgImage() {
+/* ------------------------------------------------------------- OG 分享卡 1200×630 */
+
+function renderOg() {
   const W = 1200;
   const H = 630;
   const rgba = new Uint8Array(W * H * 4);
+  const tile = 340; // 左側圖標尺寸
   for (let y = 0; y < H; y++) {
     const v = y / (H - 1);
     for (let x = 0; x < W; x++) {
       const u = x / (W - 1);
-      const glow = clamp(1 - Math.hypot((u - 0.28) * 1.2, v - 0.35));
-      let r = mix(8, 42, glow);
-      let g = mix(24, 107, glow);
-      let b = mix(15, 71, glow);
+      let [r, g, b] = paintTile(u * 0.8, v);
+      // 外金線
+      const dOuter = Math.abs(sdRoundBox(x, y, W / 2, H / 2, W / 2 - 26, H / 2 - 26, 16)) - 1.6;
+      const aOuter = (1 - smooth(-1, 1, dOuter)) * 0.5;
+      r = mix(r, C.gold[0], aOuter);
+      g = mix(g, C.gold[1], aOuter);
+      b = mix(b, C.gold[2], aOuter);
 
-      // Gold outer hairline frame
-      const dOuter = Math.abs(sdRoundBox(x, y, W / 2, H / 2, W / 2 - 28, H / 2 - 28, 14)) - 1.5;
-      const aOuter = 1 - smooth(-1, 1, dOuter);
-      r = mix(r, 216, aOuter * 0.55);
-      g = mix(g, 184, aOuter * 0.55);
-      b = mix(b, 113, aOuter * 0.55);
-
-      // Left hardbound book emblem centered at (300, 315)
-      const bx = (x - 300) / 195;
-      const by = (y - 315) / 195;
-      if (Math.abs(bx) < 1.05 && Math.abs(by) < 1.05) {
-        const aa = 1.6 / 195;
-        const dPages = sdRoundBox(bx, by, 0.05, 0.02, 0.72, 0.86, 0.08);
-        const aPages = 1 - smooth(-aa, aa, dPages);
-        r = mix(r, 245, aPages);
-        g = mix(g, 237, aPages);
-        b = mix(b, 220, aPages);
-
-        const dBook = sdRoundBox(bx, by, 0, 0, 0.72, 0.86, 0.09);
-        const aBook = 1 - smooth(-aa, aa, dBook);
-        r = mix(r, 28, aBook);
-        g = mix(g, 82, aBook);
-        b = mix(b, 54, aBook);
-
-        const aSpine = 1 - smooth(-aa, aa, Math.max(dBook, bx + 0.48));
-        r = mix(r, 14, aSpine * 0.8);
-        g = mix(g, 48, aSpine * 0.8);
-        b = mix(b, 30, aSpine * 0.8);
-
-        const aFrame = (1 - smooth(-aa, aa, Math.abs(sdRoundBox(bx, by, 0.08, 0, 0.50, 0.70, 0.04)) - 0.015)) * aBook;
-        const aFleur = emblemAlpha((bx - 0.08) * 1.1, (by + 0.04) * 1.1, aa * 1.2) * aBook;
-        const aRule = (1 - smooth(-aa, aa, sdRoundBox(bx - 0.08, by - 0.48, 0, 0, 0.28, 0.024, 0.012))) * aBook;
-        const gold = clamp(Math.max(aFrame * 0.85, aFleur, aRule));
-        r = mix(r, 236, gold);
-        g = mix(g, 206, gold);
-        b = mix(b, 142, gold);
+      // 左：SCOUTBOOK 圖標（縮小版同一設計）
+      const cx = 300;
+      const cy = H / 2;
+      const half = tile / 2;
+      if (Math.abs(x - cx) < half + 2 && Math.abs(y - cy) < half + 2) {
+        const lu = (x - (cx - half)) / tile;
+        const lv = (y - (cy - half)) / tile;
+        const aTile = 1 - smooth(-1.4, 1.4, sdRoundBox(lu, lv, 0.5, 0.5, 0.5, 0.5, 0.192) * tile);
+        let [tr, tg, tb] = paintTile(lu, lv);
+        const inset = sdRoundBox(lu, lv, 0.5, 0.5, 0.46, 0.46, 0.165);
+        let aGold = (1 - smooth(-0.7, 0.7, Math.abs(inset) * tile - 3)) * 0.95;
+        const aG = 1 - smooth(-0.8, 0.8, glyph(lu, lv) * tile);
+        const [gr, gg, gb] = paintGold(lv);
+        aGold = Math.max(aGold, aG);
+        tr = mix(tr, gr, aGold);
+        tg = mix(tg, gg, aGold);
+        tb = mix(tb, gb, aGold);
+        r = mix(r, tr, aTile);
+        g = mix(g, tg, aTile);
+        b = mix(b, tb, aTile);
       }
 
-      // Right ivory record sheet preview card (x: 540..1110, y: 115..515)
-      const dCard = sdRoundBox(x, y, 825, 315, 285, 195, 12);
+      // 右：象牙紀錄頁（深綠標題帶 + 金線 + 綠剔選框）
+      const cardX = 880;
+      const cardY = H / 2;
+      const dCard = sdRoundBox(x, y, cardX, cardY, 268, 196, 10);
       const aCard = 1 - smooth(-1.2, 1.2, dCard);
       if (aCard > 0) {
-        let cr = 248;
-        let cg = 243;
-        let cb = 232;
-        // Maroon header band inside card
-        const dHead = sdRoundBox(x, y, 825, 178, 245, 24, 4);
-        const aHead = 1 - smooth(-1, 1, dHead);
-        cr = mix(cr, 24, aHead);
-        cg = mix(cg, 74, aHead);
-        cb = mix(cb, 48, aHead);
-
-        // Gold accent pill inside header
-        const dPill = sdRoundBox(x, y, 645, 178, 46, 10, 4);
-        const aPill = 1 - smooth(-1, 1, dPill);
-        cr = mix(cr, 232, aPill);
-        cg = mix(cg, 199, aPill);
-        cb = mix(cb, 126, aPill);
-
-        // Five progress bars: Membership, Bronze Arrow, Silver Arrow, Gold Arrow, Golden Bauhinia
-        const rows = [248, 298, 348, 398];
-        const fills = [210, 175, 140, 95];
-        for (let ri = 0; ri < 4; ri++) {
-          const ry = rows[ri];
-          const aTrack = 1 - smooth(-1, 1, sdRoundBox(x, y, 825, ry, 245, 10, 5));
-          cr = mix(cr, 226, aTrack);
-          cg = mix(cg, 216, aTrack);
-          cb = mix(cb, 196, aTrack);
-
-          const fw = fills[ri];
-          const aFill = 1 - smooth(-1, 1, sdRoundBox(x, y, 580 + fw, ry, fw, 10, 5));
-          cr = mix(cr, ri === 3 ? 230 : 28, aFill);
-          cg = mix(cg, ri === 3 ? 168 : 82, aFill);
-          cb = mix(cb, ri === 3 ? 0 : 54, aFill);
+        let cr = C.ivory[0];
+        let cg = C.ivory[1];
+        let cb = C.ivory[2];
+        const aHead = 1 - smooth(-1, 1, sdRoundBox(x, y, cardX, cardY - 150, 236, 26, 4));
+        cr = mix(cr, C.clothMid[0], aHead);
+        cg = mix(cg, C.clothMid[1], aHead);
+        cb = mix(cb, C.clothMid[2], aHead);
+        // 標題帶內金點
+        const aDot = 1 - smooth(-1, 1, Math.hypot(x - (cardX - 214), y - (cardY - 150)) - 6);
+        cr = mix(cr, C.gold[0], aDot);
+        cg = mix(cg, C.gold[1], aDot);
+        cb = mix(cb, C.gold[2], aDot);
+        // 三條金線 + 三行綠底線
+        for (let k = 0; k < 3; k++) {
+          const yy = cardY - 78 + k * 62;
+          const aRule = 1 - smooth(-1, 1, sdRoundBox(x, y, cardX - 40, yy, 170, 3, 1.5));
+          cr = mix(cr, C.goldDeep[0], aRule * 0.85);
+          cg = mix(cg, C.goldDeep[1], aRule * 0.85);
+          cb = mix(cb, C.goldDeep[2], aRule * 0.85);
+          const aLine = 1 - smooth(-1, 1, sdRoundBox(x, y, cardX + 20, yy + 22, 190, 1.6, 1));
+          cr = mix(cr, C.clothMid[0], aLine * 0.5);
+          cg = mix(cg, C.clothMid[1], aLine * 0.5);
+          cb = mix(cb, C.clothMid[2], aLine * 0.5);
         }
-
-        // Gold foil chop circle bottom-right of card
-        const dSeal = Math.abs(Math.hypot(x - 1025, y - 455) - 26) - 2.2;
-        const aSeal = 1 - smooth(-1, 1, dSeal);
-        cr = mix(cr, 180, aSeal * 0.85);
-        cg = mix(cg, 140, aSeal * 0.85);
-        cb = mix(cb, 48, aSeal * 0.85);
-
         r = mix(r, cr, aCard);
         g = mix(g, cg, aCard);
         b = mix(b, cb, aCard);
       }
 
-      // Quantize subtle gradient bands slightly (step 4) so DEFLATE keeps 1200x630 PNG compact (<55KB)
       const i = (y * W + x) * 4;
-      rgba[i] = clamp(Math.round(r / 4) * 4, 0, 255);
-      rgba[i + 1] = clamp(Math.round(g / 4) * 4, 0, 255);
-      rgba[i + 2] = clamp(Math.round(b / 4) * 4, 0, 255);
+      rgba[i] = Math.round(r);
+      rgba[i + 1] = Math.round(g);
+      rgba[i + 2] = Math.round(b);
       rgba[i + 3] = 255;
     }
   }
+  quantize(rgba, 3);
   return encodePng(W, H, rgba);
 }
 
-const png16 = renderHandcrafted16();
-const png32 = renderSquareIcon(32);
-const png48 = renderSquareIcon(48);
-const png180 = renderSquareIcon(180);
-const png192 = renderSquareIcon(192);
-const png512 = renderSquareIcon(512);
-const pngMask192 = renderSquareIcon(192, { maskable: true });
-const pngMask512 = renderSquareIcon(512, { maskable: true });
-const pngOg = renderOgImage();
-const ico = encodeIco([
-  { size: 16, png: png16 },
-  { size: 32, png: png32 },
-  { size: 48, png: png48 },
-]);
+/* ------------------------------------------------------------------ 輸出 */
 
-const outputs = [
-  ['favicon.ico', ico],
-  ['favicon-16.png', png16],
-  ['favicon-32.png', png32],
-  ['apple-touch-icon.png', png180],
-  ['icon-192.png', png192],
-  ['icon-512.png', png512],
-  ['icon-maskable-192.png', pngMask192],
-  ['icon-maskable-512.png', pngMask512],
-  ['og-image.png', pngOg],
-];
+const written = [];
+function write(name, buf) {
+  const p = path.join(outDir, name);
+  writeFileSync(p, buf);
+  written.push([name, statSync(p).size]);
+}
 
-let totalBytes = 0;
-for (const [name, buf] of outputs) {
-  const full = path.join(outDir, name);
-  writeFileSync(full, buf);
-  const sz = statSync(full).size;
-  totalBytes += sz;
-  console.log(`  ✓ ${name.padEnd(22)} ${(sz / 1024).toFixed(1).padStart(6)} KB`);
-}
-// Root-level favicons referenced directly from index.html (G11 requirement)
-const rootOutputs = [
-  ['favicon.ico', ico],
-  ['favicon-32.png', png32],
-  ['favicon-48.png', png48],
-];
-for (const [name, buf] of rootOutputs) {
-  writeFileSync(path.join(root, 'web', 'public', name), buf);
-}
-console.log(`Total 9-icon bundle: ${(totalBytes / 1024).toFixed(1)} KB (G11 limit <= 260 KB)`);
-if (totalBytes > 260 * 1024) {
-  console.error('ERROR: Icons exceed 260 KB budget!');
-  process.exit(1);
-}
+write('icon-192-v2.png', renderSquare(192));
+write('icon-512-v2.png', renderSquare(512));
+write('icon-maskable-192-v2.png', renderSquare(192, { maskable: true }));
+write('icon-maskable-512-v2.png', renderSquare(512, { maskable: true }));
+write('apple-touch-icon-v2.png', renderSquare(180, { rounded: false }));
+write('favicon-16-v2.png', renderHandcrafted16());
+write('favicon-32-v2.png', renderSquare(32));
+write('favicon-48-v2.png', renderSquare(48));
+write(
+  'favicon-v2.ico',
+  encodeIco([
+    { size: 16, png: renderHandcrafted16() },
+    { size: 32, png: renderSquare(32) },
+    { size: 48, png: renderSquare(48) },
+  ]),
+);
+write('og-image-v2.png', renderOg());
+
+const total = written.reduce((n, [, s]) => n + s, 0);
+for (const [name, size] of written) console.log(`  ${name.padEnd(26)} ${(size / 1024).toFixed(1)} KB`);
+console.log(`  ${'TOTAL'.padEnd(26)} ${(total / 1024).toFixed(1)} KB ${total <= 260 * 1024 ? '(≤ 260 KB ✓)' : '(超出 260 KB ✗)'}`);
+
+const stale = readdirSync(outDir).filter((f) => !written.some(([n]) => n === f));
+if (stale.length) console.log(`\n  未使用（可刪）：${stale.join(', ')}`);

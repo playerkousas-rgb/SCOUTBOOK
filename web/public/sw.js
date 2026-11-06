@@ -1,22 +1,20 @@
 /* SCOUTBOOK Service Worker — 確保露營、遠足及離線集會現場仍可完整開啟與讀寫紀錄冊。 */
 
-const CACHE_NAME = 'scoutbook-cache-v1';
+const CACHE_NAME = 'scoutbook-cache-v2';
 const SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.svg',
-  '/favicon.ico',
-  '/favicon-32.png',
-  '/favicon-48.png',
-  '/icons/favicon.ico',
-  '/icons/favicon-16.png',
-  '/icons/favicon-32.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-192.png',
-  '/icons/icon-maskable-512.png',
+  '/icons/favicon-v2.ico',
+  '/icons/favicon-16-v2.png',
+  '/icons/favicon-32-v2.png',
+  '/icons/favicon-48-v2.png',
+  '/icons/apple-touch-icon-v2.png',
+  '/icons/icon-192-v2.png',
+  '/icons/icon-512-v2.png',
+  '/icons/icon-maskable-192-v2.png',
+  '/icons/icon-maskable-512-v2.png',
+  '/icons/og-image-v2.png',
 ];
 
 self.addEventListener('install', (event) => {

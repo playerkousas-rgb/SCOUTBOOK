@@ -303,55 +303,89 @@ test('中英文完全分離：一鍵切換、不以並排方式塞入表格', ()
   assert.ok(!paper.includes('誓詞 Promise'));
 });
 
-test('圖示全套 9 個 + 根目錄 favicon、manifest 與 Service Worker 一致', () => {
+test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTML／manifest／SW 一致', () => {
   const html = read('web/index.html');
   assert.ok(html.includes(`content="${APP_VERSION}"`));
-  assert.ok(html.includes('href="/favicon.svg"'));
-  assert.ok(html.includes('href="/favicon.ico"'));
-  assert.ok(html.includes('href="/favicon-32.png"'));
-  assert.ok(html.includes('href="/favicon-48.png"'));
-  assert.ok(html.includes('href="/icons/apple-touch-icon.png"'));
   assert.ok(html.includes('content="#143b28"'), '童軍綠 theme-color');
 
-  const files = [
-    'web/public/favicon.svg',
-    'web/public/favicon.ico',
-    'web/public/favicon-32.png',
-    'web/public/favicon-48.png',
-    'web/public/icons/favicon.ico',
-    'web/public/icons/favicon-16.png',
-    'web/public/icons/favicon-32.png',
-    'web/public/icons/apple-touch-icon.png',
-    'web/public/icons/icon-192.png',
-    'web/public/icons/icon-512.png',
-    'web/public/icons/icon-maskable-192.png',
-    'web/public/icons/icon-maskable-512.png',
-    'web/public/icons/og-image.png',
-  ];
-  for (const rel of files) {
-    const f = path.join(root, rel);
-    assert.ok(fs.existsSync(f) && fs.statSync(f).size > 100, `缺少或空白圖示 ${rel}`);
+  // 5 條 link（G11 §7）
+  for (const needle of [
+    'href="/icons/favicon-v2.ico"',
+    'href="/icons/favicon-16-v2.png"',
+    'href="/icons/favicon-32-v2.png"',
+    'href="/icons/apple-touch-icon-v2.png"',
+    'href="/manifest.webmanifest"',
+  ]) assert.ok(html.includes(needle), `index.html 缺少 ${needle}`);
+  // og:image 必須絕對網址，否則分享平台攞唔到
+  const og = html.match(/<meta property="og:image" content="([^"]+)"/)[1];
+  assert.match(og, /^https:\/\/[^/]+\/icons\/og-image-v2\.png$/, 'og:image 必須絕對網址');
+  assert.ok(html.includes('property="og:image:width" content="1200"'));
+  assert.ok(html.includes('property="og:image:height" content="630"'));
+
+  // 不准 SVG 圖標（G11 §3）
+  assert.equal(html.includes('image/svg+xml'), false, 'index.html 不得使用 SVG 圖標');
+  const pub = path.join(root, 'web/public');
+  assert.equal(fs.existsSync(path.join(pub, 'favicon.svg')), false, '不應再有 favicon.svg');
+
+  // 9 個檔案 + 真實尺寸（讀 PNG IHDR）
+  const dims = (rel) => {
+    const b = fs.readFileSync(path.join(pub, rel));
+    assert.equal(b.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${rel} 不是 PNG`);
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+  };
+  const expect = {
+    'icons/favicon-16-v2.png': 16,
+    'icons/favicon-32-v2.png': 32,
+    'icons/favicon-48-v2.png': 48,
+    'icons/apple-touch-icon-v2.png': 180,
+    'icons/icon-192-v2.png': 192,
+    'icons/icon-512-v2.png': 512,
+    'icons/icon-maskable-192-v2.png': 192,
+    'icons/icon-maskable-512-v2.png': 512,
+  };
+  let total = 0;
+  for (const [rel, size] of Object.entries(expect)) {
+    const { w, h } = dims(rel);
+    assert.equal(w, size, `${rel} 寬度應為 ${size}`);
+    assert.equal(h, size, `${rel} 高度應為 ${size}`);
+    total += fs.statSync(path.join(pub, rel)).size;
+  }
+  const ogSize = dims('icons/og-image-v2.png');
+  assert.equal(ogSize.w, 1200);
+  assert.equal(ogSize.h, 630);
+  total += fs.statSync(path.join(pub, 'icons/og-image-v2.png')).size;
+  const ico = fs.readFileSync(path.join(pub, 'icons/favicon-v2.ico'));
+  assert.equal(ico.readUInt16LE(2), 1, 'favicon 必須是 ICO');
+  assert.equal(ico.readUInt16LE(4), 3, 'favicon.ico 應含 16／32／48 三種尺寸');
+  total += ico.length;
+  assert.ok(total <= 260 * 1024, `圖標總體積 ${(total / 1024).toFixed(1)} KB 超出 260 KB`);
+  // 舊檔名一律清走（immutable cache：改圖必改檔名）
+  for (const stale of ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/og-image.png', 'icons/favicon.ico', 'favicon.ico', 'favicon-32.png']) {
+    assert.equal(fs.existsSync(path.join(pub, stale)), false, `舊圖標未清走：${stale}`);
   }
 
   const manifest = JSON.parse(read('web/public/manifest.webmanifest'));
   assert.equal(manifest.short_name, 'SCOUTBOOK');
   assert.equal(manifest.theme_color, '#143b28');
   assert.equal(manifest.background_color, '#08180f');
+  assert.equal(manifest.icons.length, 4, 'manifest 應有 4 個 icon（any 192/512 + maskable 192/512）');
+  assert.equal(manifest.icons.filter((i) => i.purpose === 'maskable').length, 2);
   for (const icon of manifest.icons) {
-    assert.ok(fs.existsSync(path.join(root, 'web/public', icon.src.replace(/^\//, ''))), `manifest 圖示不存在 ${icon.src}`);
+    assert.ok(fs.existsSync(path.join(pub, icon.src.replace(/^\//, ''))), `manifest 圖示不存在 ${icon.src}`);
+    assert.equal(icon.type, 'image/png');
   }
 
   const sw = read('web/public/sw.js');
-  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v1'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v2'"));
   assert.ok(!sw.includes('cubbook') && !sw.includes('vsbook'));
   // 預快取清單每一項都必須真實存在，否則離線首次載入會破圖
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];
   for (const m of shell.matchAll(/'([^']+)'/g)) {
     const url = m[1];
-    const rel = url === '/' || url === '/index.html' ? null : path.join(root, 'web/public', url.replace(/^\//, ''));
+    const rel = url === '/' || url === '/index.html' ? null : path.join(pub, url.replace(/^\//, ''));
     if (rel) assert.ok(fs.existsSync(rel), `Service Worker 預快取檔案不存在：${url}`);
   }
-  assert.ok(!fs.existsSync(path.join(root, 'web/public/img')), '不應保留其他支部圖片');
+  assert.ok(!fs.existsSync(path.join(pub, 'img')), '不應保留其他支部圖片');
 });
 
 test('package.json / vite.config.js 已完全改用 scoutbook 及 /api/scoutbadge', () => {

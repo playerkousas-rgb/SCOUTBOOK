@@ -45,7 +45,7 @@ node scripts/preflight_v1.0.mjs .
 | 4 | **領袖模式（只讀）與普通模式嚴格分離** | 普通模式不能讀取他人紀錄冊，只能貼上領袖簽發的 `SB1S.` 核簽碼；出示 QR（`SB1.`）預設全不剔選。領袖模式以伺服器端 `LEADER_CODE`（**不加 `VITE_`**、`crypto.timingSafeEqual` 比對）解鎖後，本機紀錄冊鎖為唯讀，只可當面掃描及簽發 `SB1S.`。 |
 | 5 | **項目 ID 單一真相** | `shared/syllabus.js` 由 `scoutbadge/data/items.json` 產生，75 個進度細項（`L1`–`L5`）+ 143 個專科徽章逐一對照，測試以 fixture 的 sha256 與 ID 清單鎖定。BOOK 內部鍵＝官方編號原文，零映射。 |
 | 6 | **官方表格自動帶入 + A4 忠實列印** | `PT/18`（總領袖獎章及證書申請表）、`P120A1`（專科徽章／獎章考驗申請表）、`P120A2`（附加資料表格）自動填入；不適用表格（`PT/65`・`PT/19`・`PT/20`・`PT/21`・`PT/22`・`PT/69`・`PT/68`）一律不加入。桌面／平板維持 A4 比例，`≤740px` 手機自動單欄、無水平捲軸。 |
-| 7 | **版權擺位與全套圖示** | `Copyright © 2026 SCOUT SYSTEM` 與非官方聲明只出現於**封面頁腳、數位附錄、選單「關於」**三處；齊備 `/favicon.svg`、`/favicon.ico`、`/favicon-32.png`、`/favicon-48.png` 及 `/icons/*` 九件套；內含真理倉五支守衛腳本。 |
+| 7 | **版權擺位與全套圖示** | `Copyright © 2026 SCOUT SYSTEM` 與非官方聲明只出現於**封面頁腳、數位附錄、選單「關於」**三處；齊備 `/icons/*` 九件套（`icon-192-v2.png`、`icon-512-v2.png`、`icon-maskable-192-v2.png`、`icon-maskable-512-v2.png`、`apple-touch-icon-v2.png`、`favicon-16-v2.png`、`favicon-32-v2.png`、`favicon-48-v2.png`、`favicon-v2.ico`、`og-image-v2.png`；全 PNG／ICO，無 SVG）；內含真理倉五支守衛腳本。 |
 
 ---
 
