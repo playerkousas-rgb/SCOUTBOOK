@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### 變更（Changed）
+- **圖標重設計（對齊家族版式）**：不再自創「書本卡片」，改為 VSBOOK／ROVERBOOK 同一基因——圓角布色方塊（radius 0.19）＋內嵌金線＋單色金浮雕（上方家族共用水滴環，下方支部圖案＝打開的紀錄冊）。四色以上、滿版、扁平。
+- 依 G11 標準出齊 10 個 PNG／ICO 並**移除 SVG**（`favicon.svg` 及根目錄重複 favicon 全部刪走）：`icon-192-v2` / `icon-512-v2` / `icon-maskable-192-v2` / `icon-maskable-512-v2` / `apple-touch-icon-v2` / `favicon-16-v2`（手繪像素圖，非縮圖）/ `favicon-32-v2` / `favicon-48-v2` / `favicon-v2.ico`（16+32+48 三合一）/ `og-image-v2`；總體積 183.7 KB（≤ 260 KB）。
+- 檔名一律加 `-v2`：`/icons/*` 設 immutable cache，換圖必換名，避免主畫面殘留舊圖。
+- `index.html` 改為 G11 的 5 條 link ＋ 4 條 meta；`og:image` 改絕對網址；manifest 收成 4 個 icon（any 192/512＋maskable 192/512）；SW 預快取同步換名、`CACHE_NAME` 升 v2；`vercel.json` 為 `/icons/*` 加 immutable。
+- 新增 `npm run icons`（`scripts/generate_icons.mjs` 重寫：零依賴 PNG/ICO 編碼器＋SDF 繪圖＋16px 手繪網格）。
+- 新增 `docs/partner-scoutbadge.md`：給 scoutbadge 的配合清單（不用改／要改／請你決定）。
+
 ### 修正（Fixed）
 - 底部翻頁膠囊仍是姊妹倉 VSBOOK／ROVERBOOK 的酒紅底（`rgba(46, 7, 16, 0.9)`）—— 改為童軍綠 `rgba(8, 24, 15, 0.9)`。
 - 同色系一併清零：舞台底部酒紅光暈（`rgba(150, 30, 52, 0.28)`）、離線／更新提示條、遮罩層、吐司、掃描框共 7 處；手寫墨由酒紅黑 `#24161c` 改回深童軍綠 `#143b28`。
