@@ -161,8 +161,9 @@ export function Sig({ label, en, path, defaultName = '', defaultTitle = '' }) {
 }
 
 /** 紙本「所選項目（請圈出）」互動紅圈選擇器 */
-export function CircleChoice({ label = '所選項目（請圈出）', en = 'Selected Item (Please Circle)', path, options, onSelect }) {
-  const [value, set] = useField(path, '');
+export function CircleChoice({ label = '所選項目（請圈出）', en = 'Selected Item (Please Circle)', path, options, onSelect, maxSelections = 1, hint = '', hintEn = '' }) {
+  const [value, set] = useField(path, maxSelections > 1 ? [] : '');
+  const selected = Array.isArray(value) ? value : value ? [value] : [];
   const readOnly = useReadOnly();
   const { isEn } = useLang();
   return (
@@ -171,20 +172,23 @@ export function CircleChoice({ label = '所選項目（請圈出）', en = 'Sele
         {isEn ? en : label}
         {!isEn && en && <em>{en}</em>}
       </span>
-      <div className="circlebox__opts" role="radiogroup" aria-label={isEn ? en : label}>
+      {(hint || hintEn) && <p className="circlebox__hint">{isEn ? hintEn : hint}</p>}
+      <div className="circlebox__opts" role={maxSelections > 1 ? 'group' : 'radiogroup'} aria-label={isEn ? en : label}>
         {options.map((opt) => {
-          const active = value === opt.value;
+          const active = selected.includes(opt.value);
           return (
             <button
               type="button"
               key={opt.value}
-              role="radio"
+              role={maxSelections > 1 ? 'checkbox' : 'radio'}
               aria-checked={active}
               disabled={readOnly}
               className={cx('circleopt', active && 'is-circled')}
               onClick={() => {
                 if (readOnly) return;
-                const next = active ? '' : opt.value;
+                const next = maxSelections > 1
+                  ? active ? selected.filter((v) => v !== opt.value) : selected.length < maxSelections ? [...selected, opt.value] : selected
+                  : active ? '' : opt.value;
                 set(next);
                 onSelect?.(next);
               }}

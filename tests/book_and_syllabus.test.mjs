@@ -21,6 +21,8 @@ import {
   OTHER_PAGE_SLICES,
   MIGRATED_OTHER_IDS,
   ELECTIVE_OPTIONS,
+  ITEM_ELECTIVE_OPTIONS,
+  communityElectiveOptions,
   electiveChoice,
   sliceAward,
   sliceOtherBadges,
@@ -322,13 +324,23 @@ test('獎章頁主切片覆蓋全部 100 細項、不重不漏；複示只屬同
   assert.deepEqual([...MIGRATED_OTHER_IDS].sort(), ['SC-OTH-001', 'SC-OTH-002', 'SC-OTH-004', 'SC-OTH-005', 'SC-OTH-008']);
 });
 
-test('自選項目：戶外／海上／航空三選一，社區／生態／氣象三選一', () => {
+test('自選項目：按修訂綱要分級提供三選一／四選二，所有標籤中英非空', () => {
   assert.deepEqual(ELECTIVE_OPTIONS.outdoor.map((o) => o.value), ['outdoor', 'sea', 'air']);
-  assert.deepEqual(ELECTIVE_OPTIONS.community.map((o) => o.value), ['community', 'ecology', 'meteorology']);
+  assert.deepEqual(communityElectiveOptions('L2').map((o) => o.value), ['community', 'ecology', 'meteorology']);
+  assert.deepEqual(communityElectiveOptions('L3').map((o) => o.value), ['community', 'ecology', 'meteorology']);
+  assert.deepEqual(communityElectiveOptions('L4').map((o) => o.value), ['community', 'ecology', 'meteorology', 'crisis']);
+  assert.deepEqual(communityElectiveOptions('L5').map((o) => o.value), ['community', 'ecology', 'meteorology', 'crisis']);
   for (const opt of [...ELECTIVE_OPTIONS.outdoor, ...ELECTIVE_OPTIONS.community]) {
     assert.ok(opt.zh.length > 0 && opt.en.length > 0);
   }
   assert.deepEqual(electiveChoice(newBook(), 'L2'), {});
+  const requiredElectives = ['L2-A4','L2-A6','L3-A4','L3-A5','L3-A6','L3-B1','L3-B2','L4-A4','L4-A5','L4-A6','L4-B1','L4-B2','L4-D2','L5-A4','L5-B1','L5-D1','L5-D2','L5-D3','L5-D4','L5-F1','OT-LD-A5','OT-SF-A2','OT-RG-A1'];
+  for (const id of requiredElectives) {
+    assert.ok(ITEM_ELECTIVE_OPTIONS[id]?.length, `${id} must have elective options`);
+    for (const opt of ITEM_ELECTIVE_OPTIONS[id]) {
+      assert.ok(opt.zh?.trim() && opt.en?.trim(), `${id}/${opt.value} needs zh and en labels`);
+    }
+  }
 });
 
 test('SCOUT ID 單一識別碼：容忍前導零，且同步後不保留任何其他身分欄位', () => {

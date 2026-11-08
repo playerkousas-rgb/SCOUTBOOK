@@ -4,7 +4,7 @@ import { useLang } from '../i18n.jsx';
 import { Icon, cx } from '../ui.jsx';
 import Write from './Write.jsx';
 import { SignModal } from './Ink.jsx';
-import { today, interestProgress } from '@shared/book.js';
+import { today, interestProgress, ITEM_ELECTIVE_OPTIONS } from '@shared/book.js';
 
 /**
  * AwardBlock — 進度性獎章細項表（對齊紙本「項目｜主考｜日期」三欄）。
@@ -60,6 +60,7 @@ export default function AwardBlock({ award, showDetail = false }) {
                   const st = book.progress?.[item.id] || {};
                   const done = Boolean(st.date);
                   const detailOpen = openDetail[item.id] ?? showDetail;
+                  const electiveOptions = ITEM_ELECTIVE_OPTIONS[item.id] || [];
                   return (
                     <div className={cx('assrow', done && 'is-done')} key={item.id}>
                       <div className="assrow__item">
@@ -81,6 +82,24 @@ export default function AwardBlock({ award, showDetail = false }) {
                             </span>
                           )}
                         </div>
+                        {electiveOptions.length > 0 && (
+                          <label className="assrow__elective no-print">
+                            <span className="sr-only">{isEn ? 'Completion method or badge' : '完成方式或專科徽章'}</span>
+                            <select
+                              value={st.electiveOption || ''}
+                              disabled={readOnly}
+                              aria-label={isEn ? 'Completion method or badge' : '完成方式或專科徽章'}
+                              onChange={(event) => {
+                                const selected = electiveOptions.find((o) => o.value === event.target.value);
+                                const date = !st.date && selected?.badgeId ? book.otherBadges?.[selected.badgeId]?.date || '' : '';
+                                setEntry(item.id, { electiveOption: event.target.value, ...(date ? { date } : {}) });
+                              }}
+                            >
+                              <option value="">{isEn ? '— Select option / badge —' : '— 請選擇完成方式／專科徽章 —'}</option>
+                              {electiveOptions.map((o) => <option key={o.value} value={o.value}>{isEn ? o.en : o.zh}</option>)}
+                            </select>
+                          </label>
+                        )}
                         {item.detail && (
                           <>
                             <button

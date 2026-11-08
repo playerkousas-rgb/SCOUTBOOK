@@ -51,7 +51,7 @@ export {
   officialPageByNo,
 };
 
-export const APP_VERSION = 'v2.0.0';
+export const APP_VERSION = 'v2.0.1';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 
@@ -254,7 +254,52 @@ export const ELECTIVE_OPTIONS = {
     { value: 'community', zh: '社區認識', en: 'Community Understanding' },
     { value: 'ecology', zh: '生態環境', en: 'Ecological Environment' },
     { value: 'meteorology', zh: '氣象', en: 'Meteorology' },
+    { value: 'crisis', zh: '危機及保護', en: 'Crisis and Protection' },
   ],
+};
+
+export function communityElectiveOptions(awardId) {
+  return ['L4', 'L5'].includes(awardId) ? ELECTIVE_OPTIONS.community : ELECTIVE_OPTIONS.community.slice(0, 3);
+};
+
+// 可選細項的具體完成方式。徽章選項由 scoutbadge 同步題庫 OTHER_BADGES 產生，標籤雙語完整。
+const option = (value, zh, en, badgeId = '') => ({ value, zh, en, ...(badgeId ? { badgeId } : {}) });
+const namedBadge = (id) => {
+  const badge = OTHER_BADGES.find((b) => b.id === id);
+  return badge ? option(id, `${badge.name}（${id}）`, `${badge.en} (${id})`, id) : null;
+};
+const badgeGroupOptions = (groups, exclude = []) => OTHER_BADGES
+  .filter((b) => groups.includes(b.group) && !exclude.includes(b.id))
+  .map((b) => option(b.id, `${b.name}（${b.id}）`, `${b.en} (${b.id})`, b.id));
+const activityOptions = (...rows) => rows.map(([zh, en]) => option(zh, zh, en));
+const badgesMatching = (pattern, groups = ['interest','pursuit','service']) => OTHER_BADGES
+  .filter((b) => groups.includes(b.group) && pattern.test(`${b.name} ${b.en || ''}`))
+  .map((b) => option(b.id, `${b.name}（${b.id}）`, `${b.en || b.name} (${b.id})`, b.id));
+const FITNESS_BADGES = badgesMatching(/體適能|運動|單車|射箭|游泳|獨木舟|田徑|武術|健身|越野跑|跑步|滑雪|攀登|球/, ['interest','pursuit']);
+export const ITEM_ELECTIVE_OPTIONS = {
+  'L2-A4': activityOptions(['追蹤符號應用', 'Use of tracking signs'], ['公園定向', 'Park orienteering'], ['密碼通訊', 'Code communication']),
+  'L2-A6': activityOptions(['航空相關戶外活動', 'Air-related outdoor activity'], ['說出現代飛機主要部分及名稱', 'Identify the main parts of a modern aircraft'], ['辨認初級航空章四種飛行器', 'Identify the four aircraft types in the Elementary Air Activities Badge']),
+  'L3-A4': [...badgesMatching(/露營|探險|攀登|定向|行山|遠足|騎術|露營|原野|先鋒|野外|戶外/, ['pursuit']), ...activityOptions(['城市追蹤', 'Urban tracking'], ['密碼', 'Codes'], ['旗號通訊', 'Semaphore communication'])],
+  'L3-A5': [namedBadge('SC-SEA-001')].filter(Boolean),
+  'L3-A6': [namedBadge('SC-AIR-001')].filter(Boolean),
+  'L3-B1': FITNESS_BADGES,
+  'L3-B2': [...badgesMatching(/天文|航空|科技|電腦|電子|攝影|模型|機械|科學|地質|測量|通訊|無線電/, ['interest','pursuit']), ...activityOptions(['藝術活動', 'Art activity'], ['科技活動', 'Technology activity'], ['音樂活動', 'Music activity'], ['戲劇活動', 'Drama activity'], ['手工藝活動', 'Craft activity'])],
+  'L4-A4': ['SC-PUR-007','SC-PUR-016','SC-PUR-030','SC-PUR-006'].map(namedBadge).filter(Boolean),
+  'L4-A5': [namedBadge('SC-SEA-002'), ...badgeGroupOptions(['sea'])].filter(Boolean),
+  'L4-A6': [namedBadge('SC-AIR-002')].filter(Boolean),
+  'L4-B1': [...FITNESS_BADGES, ...activityOptions(['13 小時體能訓練','13 hours of fitness training'], ['人體生長發育介紹','Talk on human growth and development'], ['健康生活主題宣傳','Healthy living promotion'], ['禁毒章','Drug Prevention Badge'])],
+  'L4-B2': [...badgesMatching(/天文|航空|科技|電腦|電子|攝影|模型|機械|科學|地質|測量|通訊|無線電/, ['interest','pursuit']), ...activityOptions(['表演','Performance'], ['藝術品','Artwork'], ['小隊歌','Patrol song'], ['比例模型','Scale model'], ['資訊科技宣傳品','IT promotional material'], ['電動機械模型','Powered mechanical model'])],
+  'L4-D2': [...['SC-SER-004','SC-SER-007','SC-SER-017','SC-OTH-004','SC-OTH-018'].map(namedBadge).filter(Boolean), ...activityOptions(['社區活動','Community activity'], ['古蹟活動','Heritage activity'], ['社區服務活動','Community service activity'])],
+  'L5-A4': ['SC-PUR-007','SC-PUR-016','SC-PUR-030','SC-PUR-006'].map(namedBadge).filter(Boolean),
+  'L5-B1': [...FITNESS_BADGES, ...activityOptions(['精神健康','Mental health'], ['食物營養','Food and nutrition'], ['公共衞生','Public health'], ['保護兒童章','Child Protection Badge'], ['SOUL Keeper Level 1','SOUL Keeper Level 1'], ['精神健康機構參觀','Visit to a mental health organisation'])],
+  'L5-D1': [...['SC-SER-009','SC-SER-008','SC-SER-013'].map(namedBadge).filter(Boolean), namedBadge('SC-OTH-001')].filter(Boolean),
+  'L5-D2': [...[namedBadge('SC-INT-033')].filter(Boolean), ...activityOptions(['特殊需要人士溝通方法','Communication with people with special needs'], ['社區設施及服務調查','Survey of community facilities and services'])],
+  'L5-D3': ['SC-INT-016','SC-INT-023','SC-INT-029','SC-PUR-037','SC-OTH-006','SC-OTH-007','SC-OTH-011','SC-OTH-012','SC-OTH-013'].map(namedBadge).filter(Boolean),
+  'L5-D4': [...[namedBadge('SC-INT-020')].filter(Boolean), ...activityOptions(['教授氣象知識','Teach meteorology'], ['介紹天氣圖並記錄營地自動氣象站一週天氣','Present a weather chart and record a camp automatic weather station for one week'])],
+  'L5-F1': [...badgeGroupOptions(['instructor']), namedBadge('SC-OTH-008')].filter(Boolean),
+  'OT-LD-A5': activityOptions(['指導三個童軍技能項目','Teach three Scout skill items'], ['指導一名或以上童軍考獲一個專科徽章','Coach one or more Scouts to earn a proficiency badge']),
+  'OT-SF-A2': badgeGroupOptions(['service']),
+  'OT-RG-A1': activityOptions(['天主教課程','Catholic course'], ['孔教課程','Confucian course'], ['伊斯蘭教課程','Islam course'], ['佛教課程','Buddhist course'], ['基督教課程','Christian course'], ['道教課程','Taoist course']),
 };
 
 export function electiveChoice(book, awardId) {
