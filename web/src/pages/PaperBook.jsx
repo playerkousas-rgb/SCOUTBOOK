@@ -7,6 +7,7 @@ import {
   ALL_AWARDS,
   SPOTLIGHT_AWARDS,
   ELECTIVE_OPTIONS,
+  communityElectiveOptions,
   sanitizeHkidPrefix,
   allStats,
   badgeStats,
@@ -69,13 +70,28 @@ function AwardIntro({ award }) {
 
 /** 紙本「所選自選項目（請圈出）」：戶外／海上／航空三選一，社區／生態／氣象三選一。 */
 function ElectiveCircle({ awardId, kind }) {
-  const options = (ELECTIVE_OPTIONS[kind] || []).map((o) => ({ value: o.value, zh: o.zh, en: o.en }));
+  const { book, update } = useBook();
+  const source = kind === 'community' ? communityElectiveOptions(awardId) : ELECTIVE_OPTIONS[kind] || [];
+  const options = source.map((o) => ({ value: o.value, zh: o.zh, en: o.en }));
   return (
     <CircleChoice
-      label={kind === 'outdoor' ? '戶外挑戰自選（請圈出一項）' : '社會自選（請圈出一項）'}
-      en={kind === 'outdoor' ? 'Outdoor Challenge Elective (Circle One)' : 'Community Elective (Circle One)'}
+      label={kind === 'outdoor' ? '戶外挑戰自選（請圈出一項）' : ['L4', 'L5'].includes(awardId) ? 'D 部自選（請圈出兩項）' : 'D 部自選（請圈出一項）'}
+      en={kind === 'outdoor' ? 'Outdoor Challenge Elective (Circle One)' : ['L4', 'L5'].includes(awardId) ? 'Part D Electives (Circle Two)' : 'Part D Elective (Circle One)'}
       path={`pages.elective_${awardId}.${kind}`}
       options={options}
+      maxSelections={kind === 'community' && ['L4', 'L5'].includes(awardId) ? 2 : 1}
+      hint={kind === 'community' && ['L4', 'L5'].includes(awardId) ? 'D2–D5 四選二；高級獎章與總領袖獎章所選兩項須不同。' : ''}
+      hintEn={kind === 'community' && ['L4', 'L5'].includes(awardId) ? 'Choose two of D2–D5; the two selections must differ between the Advanced Award and Chief Scout’s Award.' : ''}
+      onSelect={kind === 'community' && ['L4', 'L5'].includes(awardId) ? (next) => {
+        const otherAward = awardId === 'L4' ? 'L5' : 'L4';
+        const current = Array.isArray(next) ? next : [];
+        const otherPath = `elective_${otherAward}`;
+        const other = book.pages?.[otherPath]?.community;
+        if (Array.isArray(other) && current.some((v) => other.includes(v))) {
+          const cleaned = other.filter((v) => !current.includes(v));
+          update((b) => ({ ...b, pages: { ...(b.pages || {}), [otherPath]: { ...(b.pages?.[otherPath] || {}), community: cleaned } } }));
+        }
+      } : undefined}
     />
   );
 }
