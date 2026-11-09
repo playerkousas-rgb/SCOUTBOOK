@@ -30,6 +30,14 @@
 - 手機版更新提示貼齊安全區、可換行，不再遮住底部翻頁膠囊。
 - 新增 `tests/sw_update_flow.test.mjs`：以 vm 假物真跑 SW 生命週期與前台協定（install 不自動接管、SKIP_WAITING 才接管、activate 只清自家舊 cache、切回前景查更新、背景不查、提示只彈一次、controllerchange 只重載一次、首次安裝不誤彈）。
 
+### 修正（Fixed）—— 收工閘門：多檔建置入口不再被誤判
+
+- **問題**：`scripts/audit_single_html_v1.0.mjs` 的 V1 規則要求「檔名帶 `_vX.Y`」。本專案是 Vite 多檔建置，`dist/index.html` 只是入口殼（程式在 `/assets/*.js`），硬要它改名帶版號會令 Vercel（`cleanUrls`／`outputDirectory: dist`）及靜態主機找不到首頁。因此只要 `dist/` 未清走就跑到 `final_check`，就會出現假的 `FINAL CHECK FAIL`（`rm -rf dist` 後則全綠）。
+- **修法**（窄例外，不外溢）：新增 **V4 例外之二**——`index.html` 同時具備 `<script type="module" src="/assets/…">` 外部 bundle 時，視為多檔建置部署入口，不判 V1 失敗，改以 INFO 說明；版本真理仍由 `meta app-version`、`APP_VERSION`、SW 快取名硬檢（V2 規則不變）。
+- 例外只認檔名 `index.html`；真・單檔 HTML（無外部 bundle）、以及其他檔名一律照舊要求 `_vX.Y`，不會被放生。
+- 新增 `tests/audit_gate.test.mjs`（4 項）鎖住例外邊界：建置入口放行、單檔 HTML 仍 FAIL、非 `index.html` 不適用、V2 仍然硬檢。
+- 結果：`final_check` 無論「先 build 後跑」抑或「先 `rm -rf dist` 後跑」都全綠；`preflight_v1.0.mjs` 由 7/8 變 **8/8 PASS**。
+
 ### 待辦（Todo；真機及紙本核實）
 
 - 真機三寬度目測（390／768／1440）與列印實測仍未做；本版欄寬以「量度＋CSS Grid 演算法核算」驗證，未經真機目測。

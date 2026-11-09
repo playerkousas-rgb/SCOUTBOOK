@@ -122,9 +122,20 @@ export function audit(html, filename = 'app.html', bytes = Buffer.byteLength(htm
     fn = [null, generated[2]];
     info('V4', `部署拷貝 ${path.basename(filename)} 由 ${generated[1]} sync 產生 — 版本化源檔先係 Git 真理`);
   }
+  // V4 例外之二（2026-11-09）：**多檔建置（Vite／Next 等）的部署入口**。
+  // 呢類交付物嘅 index.html 只係入口殼，版本真理喺 bundle＋版本常數＋Service Worker 快取名；
+  // 檔名一改，Vercel（cleanUrls／outputDirectory: dist）同靜態主機就搵唔到首頁，屬反效果。
+  // 判別方法：有外部 module bundle（<script type="module" src="/assets/...">）而且檔名就係 index.html。
+  // 真・單檔 HTML（無外部 bundle）仍然要 _vX.Y，唔會因此放生。
+  const multiFileEntry =
+    path.basename(filename) === 'index.html' &&
+    /<script\b[^>]*type=["']module["'][^>]*src=["'][^"']*\/assets\/[^"']+["']/i.test(html);
   const appVer = (html.match(/APP_VERSION\s*=\s*['"]v?(\d+\.\d+(?:\.\d+)?)['"]/) || [])[1];
-  if (!fn) fail('V1', `檔名 ${path.basename(filename)} 無 _vX.Y 版號 — 每次更新檔名＋內文要同步改`);
-  else pass('V1', `檔名／部署拷貝版號 v${fn[1]}`);
+  if (!fn && multiFileEntry) {
+    info('V4', `多檔建置部署入口 ${path.basename(filename)} — 檔名唔加版號；版本真理 = meta app-version ＋ APP_VERSION ＋ SW 快取名`);
+  } else if (!fn) {
+    fail('V1', `檔名 ${path.basename(filename)} 無 _vX.Y 版號 — 每次更新檔名＋內文要同步改`);
+  } else pass('V1', `檔名／部署拷貝版號 v${fn[1]}`);
   if (!appVer) fail('V2', '無 APP_VERSION 常數 — 內文版號無單一真理');
   else info('V2', `APP_VERSION = v${appVer}`);
   if (!/<meta\s+name=["']app-version["']/i.test(html)) fail('V2', '無 <meta name="app-version"> — 至少要 meta／title／檔頭／常數／頁尾四處');

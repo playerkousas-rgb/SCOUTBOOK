@@ -9,7 +9,7 @@
 | `final_check_v1.0.mjs` | 收工閘門（`vercel.json` 契約、機密掃描、`dist/` 大小、單檔 HTML 審計） |
 | `repo_health_v1.0.mjs` | 12 項起手包結構、版權檔、機密、體積與內部連結健康度 |
 | `check_skills_v1.0.mjs` | 驗證 `skills/`（如有）之 frontmatter 與索引一致性（本專案按形式不設 `skills/`，此檢查為零 skill 通過） |
-| `audit_single_html_v1.0.mjs` | 單檔 HTML 之版本號、版權標記與儲存包裝審計（由 `final_check` 呼叫；本專案為 Vite 多檔建置，沒有 `dist/` 時自動跳過） |
+| `audit_single_html_v1.0.mjs` | 單檔 HTML 之版本號、版權標記與儲存包裝審計（由 `final_check` 呼叫）。**V4 例外**：Vite 多檔建置的 `dist/index.html` 屬「部署入口殼」（有外部 `/assets` module bundle），不要求 `_vX.Y` 檔名——版本真理在 `meta app-version`＋`APP_VERSION`＋SW 快取名；真・單檔 HTML（無外部 bundle）仍然要版號檔名。有 `tests/audit_gate.test.mjs` 鎖住這條例外的邊界 |
 | `build_syllabus.mjs` | 讀取上游 `scoutbadge/data/items.json`（＋`items_en.json` 英文覆蓋），產生 `shared/syllabus.js` 及 `tests/fixtures/scoutbadge-ids.json`；以 sha256 鎖定上游版本 |
 | `generate_icons.mjs` | 純 Node.js（`node:zlib` + 自寫 PNG／ICO 編碼器）決定性生成 `web/public/icons/` 九件套及根目錄 `favicon.ico`／`favicon-32.png`／`favicon-48.png`，主題為童軍綠布面 + 燙金，總體積 `<= 260 KB` |
 
