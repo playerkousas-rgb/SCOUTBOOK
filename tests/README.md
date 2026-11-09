@@ -17,6 +17,18 @@ npm test
 | `scoutbadge_sync.test.mjs` | `/api/scoutbadge` 橋接：旅團清單零金鑰、403 寫入封鎖、login／load／submitPending、`requestComplete` 轉發、端到端同步 |
 | `standalone_book.test.mjs` | 純離線旅程（建立→填寫→統計→出表→簽名→備份）、橋接降級、獨立模式標示、第 63 頁制服清單 |
 | `ui_contracts.test.mjs` | 66 頁路由、版權三處、童軍綠金 WCAG AA、領袖密碼伺服器比對、領袖／普通模式分離、中英分離、圖示＋manifest＋SW、套件配置 |
+| `layout_and_update.test.mjs` | 欄寬量度數字、名稱欄寫法（禁 `minmax(0, 1fr)`）、日期欄 ≥104px、表頭＝表身欄寬、兩行制位置、簽名圖限寬、禁 container query、四處版本號同步、更新協定 |
+| `sw_update_flow.test.mjs` | 以 vm 假物真跑 SW 生命週期與前台更新協定（install 不自動接管、SKIP_WAITING、舊 cache 清理、切回前景查更新、controllerchange 只重載一次） |
+
+另有一支非測試框架的版面核算指令：
+
+```sh
+python3 scripts/check_columns.py
+```
+
+它直接由 `web/src/styles.css` 抽出真實欄寬字串，按 CSS Grid §12 演算法計算
+320／360／390／430／768／1024／1440 各寬度下每欄實際 px，證明日期欄恆 ≥ 104px、
+名稱欄有上限、永不溢出。欄寬改動後必跑。
 
 ## Fixtures
 

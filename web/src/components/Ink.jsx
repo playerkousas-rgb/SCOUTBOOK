@@ -217,7 +217,7 @@ export function SignModal({
   );
 }
 
-export function SignatureBlock({ label, en, value, onChange, defaultName = '', defaultTitle = '' }) {
+export function SignatureBlock({ label, en, value, onChange, defaultName = '' }) {
   const { isEn } = useLang();
   const readOnly = useReadOnly();
   const [open, setOpen] = useState(false);
@@ -273,7 +273,6 @@ export function SignatureBlock({ label, en, value, onChange, defaultName = '', d
         onClose={() => setOpen(false)}
         title={isEn && en ? en : label}
         defaultName={value?.name || defaultName}
-        defaultTitle={value?.title || defaultTitle}
         onSave={(sig) => {
           onChange?.(sig);
           setOpen(false);

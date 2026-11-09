@@ -388,7 +388,7 @@ test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTM
   }
 
   const sw = read('web/public/sw.js');
-  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v2'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v3'"));
   assert.ok(!sw.includes('cubbook') && !sw.includes('vsbook'));
   // 預快取清單每一項都必須真實存在，否則離線首次載入會破圖
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];

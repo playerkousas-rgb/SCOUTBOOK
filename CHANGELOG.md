@@ -2,6 +2,39 @@
 
 本專案採用語義化版本（Semantic Versioning），每次更新同步對齊 `package.json`、`shared/book.js` 及 `web/index.html`。
 
+## [v2.1.0] - 2026-11-09
+
+### 修正（Fixed）—— 欄寬：先量度、後定寬
+
+- **先量真實內容**（`scripts/measure` 一次性數法，結果寫入 `docs/design-review.md`）：全書名稱欄最長為進度項目 **20 字**（B2 科學、科技、工程、藝術、數學及創意，僅 4 項）、中位 **7 字**；分段／範疇名 10 字；活動徽章名 8 字（中位 2 字）；專科範疇 4 字；獎章名 6 字。結論：名稱欄只需約 40–50% 闊度。
+- **名稱欄不再以 `minmax(0, 1fr)` 獨佔餘下全部闊度**，改為 `minmax(clamp(下限, 百分比, 上限), 比例fr)` 攤分：
+  - 細項簽核表 `clamp(152px, 40%, 280px)` / 0.95fr、主考 `clamp(96px, 26%, 200px)` / 1.2fr、日期 `--col-date-min…max`；
+  - 活動徽章表 `clamp(124px, 42%, 300px)` / 1.15fr；通用表格預設 `clamp(132px, 42%, 260px)` / 1.15fr。
+- **日期欄下限 104px（上限 132px）**：原生日曆輸入要 ≥104px 才放得下完整 `YYYY-MM-DD` 連日曆鈕（舊版只給 58／72／82／92／96px，數字必定被擠壓重疊）。`--col-date-min` 為單一真相，日期輸入框另有 `min-width` 保證不被壓縮。
+- **表頭與表身共用同一組 `grid-template-columns`**：`Rows` 改用 `columnTemplate()` 產生單一 `--cols`，表頭與表身套用同一個值；細項表 `.asstable__head, .assrow` 與續期表 `.renewtable__head, .renewrow` 亦收成同一條規則（舊版表頭 128px、表身 92px，天然對不齊）。
+- **達下限即轉兩行制**：新增 820px 斷點段（涵蓋手機全寬，以及因 `100dvh` 收窄書頁的矮桌面視窗），細項表改為「項目全寬一行、主考＋日期並排下一行」，活動徽章表改為「名稱全寬一行、日期／證書／簽署下一行」，不再硬擠；桌面回單欄的舊規則（會把兩行制壓成單欄）已刪走。斷點段刻意排在樣式表末端，避免被後面的桌面規則蓋過。
+- **簽署欄只按姓名計寬**：主考欄下限 96px（不預留「姓名＋職銜」）；署名 `small` 加上 ellipsis，不會撐爆欄位。
+- **簽署視窗不再預填職銜**：`SignModal` 的所有呼叫點移除 `defaultTitle`；`SignatureBlock`／`Sig` 不再收 `defaultTitle`（職位欄保留給用戶自行填寫）。示範資料人名改為純姓名（`李團長` → `李樹明`）。持有人簽署改為預填本人姓名。
+- **簽名圖同時限寬限高**：`.assrow__sigbtn img`、`.otrow__sig img`、`.renewrow__sigarea img`、`.sigblock__preview img` 全部補 `max-width: 100%`（只限高會越出欄外壓住鄰欄）。
+- **窄欄不再顯示浮動小按鈕**：日期欄的「放大填寫」浮動鍵預設隱藏（原生日曆鈕已在右邊，再加會遮住日期），手機版主考欄鉛筆鍵改為 24×24 行內尺寸。
+- **不使用 `container-type`／container query**：全書零 container query，改用百分比 `clamp` ＋ 斷點分段；避免 `position: fixed` 的簽署／放大填寫彈窗以書頁為包含塊而破版（測試鎖死）。
+- 新增 `scripts/check_columns.py`：直接由 `styles.css` 抽出真實欄寬字串，按 CSS Grid §12（base size → maximize tracks → fr 分配）計算 320／360／390／430／768／1024／1440 各寬度下每欄實際 px，證明日期欄恆 ≥104px、名稱欄有上限、永不溢出。
+- 新增 `tests/layout_and_update.test.mjs`：鎖定量度數字、欄寬寫法、兩行制位置、簽名圖限寬、`defaultTitle` 絕跡。
+
+### 修正（Fixed）—— 自動更新：已加到主畫面後會自己換新版
+
+- **四處版本號同步遞增**：`package.json` 2.0.1 → 2.1.0、`shared/book.js` `APP_VERSION`、`web/index.html`（`meta app-version`、`window.APP_VERSION`、標題、描述、開機畫面）、以及 **Service Worker 快取名 `scoutbook-cache-v2` → `v3`**（只改程式不改快取名，已安裝的 APP 永遠收舊版面）。
+- **主動查更新**：`pwa.js` 保留 `visibilitychange`（切回前景即 `reg.update()`），另加開機即查、`focus`／`online` 事件，以及每 30 分鐘的背景輪詢；註冊時加 `updateViaCache: 'none'`，避免 HTTP cache 令更新永遠查不到。
+- **偵測到新版即彈提示**：更新提示改為 `role="alertdialog"`，明示「已下載新版本 — 按一下即自動重新載入，毋須刪除或重裝 APP」，並提供「稍後」；首次安裝（無 controller）不會誤彈。
+- **按下即更新**：`postMessage({ type: 'SKIP_WAITING' })` → SW `skipWaiting()` → `controllerchange` → 自動 `location.reload()`；另加 3 秒保險重載。SW 的 `install` 不自動 `skipWaiting`（新版先停在 waiting），`activate` 清走所有 `scoutbook-*` 舊 cache 後 `clients.claim()`。
+- 手機版更新提示貼齊安全區、可換行，不再遮住底部翻頁膠囊。
+- 新增 `tests/sw_update_flow.test.mjs`：以 vm 假物真跑 SW 生命週期與前台協定（install 不自動接管、SKIP_WAITING 才接管、activate 只清自家舊 cache、切回前景查更新、背景不查、提示只彈一次、controllerchange 只重載一次、首次安裝不誤彈）。
+
+### 待辦（Todo；真機及紙本核實）
+
+- 真機三寬度目測（390／768／1440）與列印實測仍未做；本版欄寬以「量度＋CSS Grid 演算法核算」驗證，未經真機目測。
+- 第 12 項驗收（加到主畫面 → 部署新版 → 切背景再切回 → 見提示 → 按下自動重載）需在已部署環境人手做一次。
+
 ## [v2.0.1] - 2026-11-08
 
 ### 修正（Fixed）

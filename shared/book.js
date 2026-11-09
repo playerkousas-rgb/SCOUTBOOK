@@ -51,7 +51,7 @@ export {
   officialPageByNo,
 };
 
-export const APP_VERSION = 'v2.0.1';
+export const APP_VERSION = 'v2.1.0';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 
@@ -904,7 +904,7 @@ export function demoBook() {
     group: '沙田第 12 旅',
     troop: '沙田第 12 旅童軍團',
     patrol: '鷹小隊',
-    sl: '李團長',
+    sl: '李樹明',
     dateJoined: '2024-09-01',
   };
   const seed = [
@@ -922,7 +922,7 @@ export function demoBook() {
   });
   book.otherBadges['SC-INT-001'] = { date: '2025-03-15', cert: 'INT/2025/0181', confirmedByBadge: true };
   book.otherBadges['SC-PUR-001'] = { date: '2025-05-10', cert: 'PUR/2025/0244' };
-  book.pages.award_L1 = { date: '2024-11-25', certNo: 'MB/2024/0912', presentedBy: '李團長' };
-  book.renewals = [{ date: '2026-09-01', validUntil: '2027-08-31', memberNo: '0012345678', leaderName: '李團長' }];
+  book.pages.award_L1 = { date: '2024-11-25', certNo: 'MB/2024/0912', presentedBy: '李樹明' };
+  book.renewals = [{ date: '2026-09-01', validUntil: '2027-08-31', memberNo: '0012345678', leaderName: '李樹明' }];
   return book;
 }

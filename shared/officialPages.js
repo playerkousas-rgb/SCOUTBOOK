@@ -170,13 +170,13 @@ export const RECORD_COLS = {
     { k: 'date', label: '日期', en: 'Date', type: 'date' },
     { k: 'place', label: '地點', en: 'Place' },
     { k: 'brief', label: '摘要', en: 'Brief Information' },
-    { k: 'nights', label: '晚數', en: 'No. of nights' },
+    { k: 'nights', label: '晚數', en: 'No. of nights', narrow: true },
   ],
   expedition: [
     { k: 'date', label: '日期', en: 'Date', type: 'date' },
     { k: 'place', label: '地點', en: 'Place' },
     { k: 'brief', label: '摘要', en: 'Brief Information' },
-    { k: 'km', label: '里數', en: 'No. of Km' },
+    { k: 'km', label: '里數', en: 'No. of Km', narrow: true },
   ],
   training: [
     { k: 'date', label: '日期', en: 'Date', type: 'date' },
@@ -188,7 +188,7 @@ export const RECORD_COLS = {
     { k: 'date', label: '日期', en: 'Date', type: 'date' },
     { k: 'org', label: '主辦單位', en: 'Organised by' },
     { k: 'brief', label: '摘要', en: 'Brief Information' },
-    { k: 'hours', label: '服務時數', en: 'Service Hours' },
+    { k: 'hours', label: '服務時數', en: 'Service Hours', narrow: true },
   ],
   other: [
     { k: 'badge', label: '獎章或徽章', en: 'Awards or Badges' },

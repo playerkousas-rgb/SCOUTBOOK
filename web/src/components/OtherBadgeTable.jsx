@@ -92,7 +92,7 @@ export function OtherBadgeTable({ pageId }) {
                       </span>
                     )}
                   </div>
-                  <div className="otrow__date">
+                  <div className="otrow__date" data-label={isEn ? 'Date' : '日期'}>
                     <Write
                       value={entry.date || ''}
                       onChange={(v) => setBadge(badge.id, { date: v })}
@@ -101,7 +101,7 @@ export function OtherBadgeTable({ pageId }) {
                       label={`${badge.name} 日期`}
                     />
                   </div>
-                  <div className="otrow__cert">
+                  <div className="otrow__cert" data-label={isEn ? 'Cert. no.' : '證書編號'}>
                     <Write
                       value={entry.cert || ''}
                       onChange={(v) => setBadge(badge.id, { cert: v })}
@@ -136,7 +136,6 @@ export function OtherBadgeTable({ pageId }) {
         onClose={() => setSign(null)}
         title={sign ? `${isEn ? 'Badge sign-off' : '徽章簽核'} · ${isEn ? sign.en : sign.name}` : ''}
         defaultName={sign ? book.otherBadges?.[sign.id]?.signature?.name || book.member?.sl || '' : ''}
-        defaultTitle={isEn ? 'Scout Leader' : '童軍團長'}
         onSave={(sig) => {
           if (sign) {
             setBadge(sign.id, {
