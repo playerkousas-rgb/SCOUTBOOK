@@ -82,6 +82,22 @@ node scripts/preflight_v1.0.mjs .
   3. 瀏覽器分頁 favicon 只需強制重新整理（檔名帶 `-v2`，已破 cache）。
 - 圖標一律經 `npm run icons` 產生（`scripts/generate_icons.mjs`），檔名帶 `-v2` 因為 `/icons/*` 設了 `immutable` cache。
 
+### 已加入主畫面之後如何更新（v2.1.0 起全自動）
+
+**不需要刪除圖示、不需要重裝。** 把 APP 由背景切回前景時，`pwa.js` 會主動 `reg.update()` 查新版；
+偵測到新版即彈出「已下載新版本 — 按一下即自動重新載入」的提示，按下後
+`postMessage({ type: 'SKIP_WAITING' })` → Service Worker 接管 → `location.reload()`，畫面即換新版。
+
+發版方每次要同步遞增 **四處** 版本號，否則已安裝的 APP 會一直收舊版面：
+
+1. `package.json` 的 `version`
+2. `shared/book.js` 的 `APP_VERSION`
+3. `web/index.html` 的 `meta[name="app-version"]` 與 `window.APP_VERSION`
+4. `web/public/sw.js` 的 `CACHE_NAME` 尾碼（`scoutbook-cache-v3 → v4`）
+
+驗收（每次發版人手做一次）：加到主畫面 → 部署新版 → 切去背景再切回 → 見到更新提示 →
+按下 → 自動重載 → 畫面顯示新版號。
+
 ---
 
 ## 文件索引
@@ -96,6 +112,7 @@ node scripts/preflight_v1.0.mjs .
 | [LICENSE](LICENSE) | 專有版權（All Rights Reserved）＋非官方聲明 |
 | [docs/00-quickcard.md](docs/00-quickcard.md) | 一頁紙速查（路由、儲存鍵、排障） |
 | [docs/design-review.md](docs/design-review.md) | 視覺基準與巡檢紀錄 |
+| [docs/column-layout-check.png](docs/column-layout-check.png) | v2.1.0 欄寬規格示意圖（量度結果 ＋ 各寬度實際 px，由 `scripts/render_column_spec.py` 產生） |
 | [docs/p1-research.md](docs/p1-research.md) | P1 研發前調查（相近產品、自己方案、未核實項） |
 | [docs/adr/README.md](docs/adr/README.md) | 架構決策紀錄（0001 技術棧、0002 二維碼與版權） |
 | [docs/out-of-scope/README.md](docs/out-of-scope/README.md) | 明確不做事項 |

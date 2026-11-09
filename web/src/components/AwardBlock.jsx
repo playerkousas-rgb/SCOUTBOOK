@@ -196,7 +196,6 @@ export default function AwardBlock({ award, showDetail = false }) {
         onClose={() => setSignItem(null)}
         title={signItem ? `${isEn ? 'Assessor Sign-off' : '主考簽核'} · ${signItem.name}` : ''}
         defaultName={signItem ? book.progress?.[signItem.id]?.assessor || '' : ''}
-        defaultTitle={isEn ? 'Assessor / Scout Leader' : '主考／童軍團長'}
         onSave={(sig) => {
           if (signItem) {
             setEntry(signItem.id, {
@@ -261,7 +260,6 @@ export function AwardPresentation({ awardId, title, en }) {
         onClose={() => setSignOpen(false)}
         title={isEn ? 'Presenting Leader' : '頒發領袖簽署'}
         defaultName={row.signature?.name || book.member?.sl || ''}
-        defaultTitle={isEn ? 'Scout Leader' : '童軍團長'}
         onSave={(sig) => {
           set({ signature: sig, presentedBy: row.presentedBy || sig.name || '' });
           setSignOpen(false);

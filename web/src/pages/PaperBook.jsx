@@ -489,6 +489,7 @@ function StaticPage({ spec }) {
 
 function PersonalP1({ spec }) {
   const [photo, setPhoto] = useField('member.photo', null);
+  const [holderName] = useField('member.nameZh', '');
   const { isEn } = useLang();
   return (
     <Page id={spec.id}>
@@ -514,7 +515,7 @@ function PersonalP1({ spec }) {
         </div>
       </div>
       <Note en="Please stamp the Group chop on the photo.">請於相片上蓋上旅印（線上版以紀錄為準）。</Note>
-      <Sig label="持有人簽署" en="Signature of Holder" path="holderSignature" defaultTitle={isEn ? 'Scout' : '童軍成員'} />
+      <Sig label="持有人簽署" en="Signature of Holder" path="holderSignature" defaultName={holderName || ''} />
       <H en="IN CASE OF ACCIDENT">{isEn ? 'In Case of Accident' : '如有意外請代通知'}</H>
       <Grid cols={2}>
         <Line label="姓名（關係）" en="Name (Relationship)" path="member.emergencyName" placeholder="陳大文（父親）" />
@@ -595,6 +596,18 @@ const RANK_ROWS = [
   { from: 'splFrom', to: 'splTo', zh: '團隊長', en: 'Senior Patrol Leader' },
 ];
 
+/* 兩張手寫表格的欄寬：表頭與表身共用同一組模板（量度結果見 styles.css 表格章節）。
+   職位 2 字、導師簽署 4 字、項目為 AYP 科目（最長 6 字），故名稱欄下限 112–120px 已足夠；
+   日期欄一律 clamp 到 104px 以上，保證 YYYY-MM-DD 連日曆鈕完整可見。 */
+const RANK_COLS_STYLE = {
+  // 職位只有 2–4 字（副小隊長），由／至兩欄也是日期：拿到的多餘闊度還給日期欄，
+  // 名稱欄不再獨佔（舊版 flex: 1 會令職位欄食掉 2/3 版位）。
+  '--cols': 'minmax(clamp(104px, 30%, 190px), 0.9fr) minmax(var(--col-date-min), 1fr) minmax(var(--col-date-min), 1fr)',
+};
+const AYP_COLS_STYLE = {
+  '--cols': 'minmax(clamp(132px, 46%, 260px), 1.2fr) minmax(clamp(112px, 26%, 200px), 0.9fr) minmax(var(--col-date-min), var(--col-date-max))',
+};
+
 const STAR_ROWS = [
   { k: 'y1', zh: '一年星', en: '1st year' },
   { k: 'y2', zh: '二年星', en: '2nd year' },
@@ -626,13 +639,13 @@ function PersonalP4({ spec }) {
       </Grid>
       <H en="PATROL APPOINTMENTS">{isEn ? 'Patrol Appointments' : '小隊職務'}</H>
       <div className="pgtable">
-        <div className="pgtable__head pgtable__row pgtable__row--3">
+        <div className="pgtable__head pgtable__row" style={RANK_COLS_STYLE}>
           <span>{isEn ? 'Post' : '職位'}</span>
           <span>{isEn ? 'From' : '由'}</span>
           <span>{isEn ? 'To' : '至'}</span>
         </div>
         {RANK_ROWS.map((row) => (
-          <div className="pgtable__row pgtable__row--3" key={row.from}>
+          <div className="pgtable__row" style={RANK_COLS_STYLE} key={row.from}>
             <span className="pgtable__cell pgtable__cell--label">
               {isEn ? row.en : row.zh}
               {!isEn && <em>{row.en}</em>}
@@ -668,7 +681,7 @@ function PersonalP5({ spec }) {
         cols={[
           { k: 'group', label: '旅別', en: 'Group', width: 2 },
           { k: 'date', label: '轉旅日期', en: 'Date of Transfer', type: 'date', width: 1 },
-          { k: 'leaderName', label: '前任團長姓名', en: 'Name of Former Scout Leader', width: 2 },
+          { k: 'leaderName', label: '前任團長姓名', en: 'Name of Former Scout Leader', weight: 2.2 },
           { k: 'leaderPhone', label: '前任團長電話', en: 'Tel. No. of Former Scout Leader', width: 2 },
         ]}
       />
@@ -742,13 +755,13 @@ function AypTraining({ spec, pageId, level, levelEn }) {
       <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
       <P en={`${levelEn}: Adventurous Journey — preliminary training.`}>{level}野外鍛鍊科：基本訓練。</P>
       <div className="pgtable">
-        <div className="pgtable__head pgtable__row pgtable__row--3">
+        <div className="pgtable__head pgtable__row" style={AYP_COLS_STYLE}>
           <span>{isEn ? 'Subject' : '項目'}</span>
           <span>{isEn ? "Instructor's Signature" : '導師簽署'}</span>
           <span>{isEn ? 'Date' : '日期'}</span>
         </div>
         {AYP_SUBJECTS.map(([zh, en], i) => (
-          <div className="pgtable__row pgtable__row--3" key={zh}>
+          <div className="pgtable__row" style={AYP_COLS_STYLE} key={zh}>
             <span className="pgtable__cell pgtable__cell--label">
               {i + 1}. {isEn ? en : zh}
               {!isEn && <em>{en}</em>}

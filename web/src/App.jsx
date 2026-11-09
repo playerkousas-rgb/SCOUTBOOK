@@ -361,10 +361,28 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
       )}
 
       {updateReady && (
-        <div className="updatebar no-print" role="status">
-          <span>{isEn ? 'New version ready' : 'SCOUTBOOK 有新版本可用'}</span>
+        <div className="updatebar no-print" role="alertdialog" aria-live="assertive">
+          <span className="updatebar__text">
+            {isEn ? (
+              <>
+                <strong>New version installed</strong> — tap to reload, no need to reinstall.
+              </>
+            ) : (
+              <>
+                <strong>已下載新版本</strong> — 按一下即自動重新載入，毋須刪除或重裝 APP。
+              </>
+            )}
+          </span>
           <button type="button" className="btn btn--gold btn--sm" onClick={() => applyPwaUpdate()}>
-            {isEn ? 'Reload' : '立即更新'}
+            {isEn ? 'Reload now' : '立即更新'}
+          </button>
+          <button
+            type="button"
+            className="updatebar__late"
+            onClick={() => setUpdateReady(false)}
+            aria-label={isEn ? 'Later' : '稍後'}
+          >
+            {isEn ? 'Later' : '稍後'}
           </button>
         </div>
       )}

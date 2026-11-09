@@ -155,9 +155,9 @@ export function Grid({ cols = 2, children, className = '' }) {
   return <div className={cx('fgrid', `fgrid--${cols}`, className)}>{children}</div>;
 }
 
-export function Sig({ label, en, path, defaultName = '', defaultTitle = '' }) {
+export function Sig({ label, en, path, defaultName = '' }) {
   const [value, set] = useField(path, null);
-  return <SignatureBlock label={label} en={en} value={value} onChange={set} defaultName={defaultName} defaultTitle={defaultTitle} />;
+  return <SignatureBlock label={label} en={en} value={value} onChange={set} defaultName={defaultName} />;
 }
 
 /** 紙本「所選項目（請圈出）」互動紅圈選擇器 */
@@ -303,7 +303,6 @@ export function AssessTable({ title, en, items, exempted = false }) {
         onClose={() => setSignItem(null)}
         title={signItem ? `${isEn ? 'Assessor Initials' : '主考簽核'} · (${signItem.no})` : ''}
         defaultName={signItem ? book.progress?.[signItem.id]?.assessor || '' : ''}
-        defaultTitle={isEn ? 'Assessor / SL' : '主考／團長'}
         onSave={(sig) => {
           if (signItem) {
             setEntry(signItem.id, {
@@ -319,6 +318,30 @@ export function AssessTable({ title, en, items, exempted = false }) {
   );
 }
 
+/**
+ * 欄寬模板：表頭與表身共用同一個值，避免「表頭 128px、表身 92px」式的天然對不齊。
+ *
+ * 依「每欄真實內容有幾長」定下限，再以 minmax(下限, 比例fr) 攤分餘下闊度：
+ *   - 日期：clamp(104px, 14%, 132px)，放得下完整 YYYY-MM-DD 連日曆鈕；
+ *   - 短欄（晚數／里數／時數）：clamp(64px, 8%, 88px)；
+ *   - 文字欄：依 label 字數給下限（最少 96px），再按 weight 比例取 fr。
+ * 名稱欄不會以 minmax(0, 1fr) 獨佔全部剩餘闊度，約佔 40–50%。
+ */
+export function columnTemplate(cols, { del = false } = {}) {
+  const text = cols.filter((c) => c.type !== 'date' && !c.narrow);
+  const textWeight = text.reduce((sum, c) => sum + (c.weight || (c.width ? c.width * 1.6 : 1.6)), 0) || 1;
+  const tracks = cols.map((c) => {
+    if (c.type === 'date') return 'minmax(var(--col-date-min), var(--col-date-max))';
+    if (c.narrow) return 'minmax(var(--col-short-min), var(--col-short-max))';
+    const weight = c.weight || (c.width ? c.width * 1.6 : 1.6);
+    const min = Math.max(96, Math.round([...(c.label || '')].length * 15));
+    const fr = Math.max(0.6, Math.round((weight / textWeight) * 2.4 * 10) / 10);
+    return `minmax(clamp(${min}px, ${Math.round((weight / textWeight) * 100)}%, ${min + 130}px), ${fr}fr)`;
+  });
+  if (del) tracks.push('var(--col-del, 28px)');
+  return tracks.join(' ');
+}
+
 /** 紙本表格（預設不顯示自創刪除鍵，手機自動展開為欄名在上、值在下） */
 export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense = false, cap }) {
   const [stored, set] = useField(path, []);
@@ -326,6 +349,8 @@ export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense 
   const { isEn } = useLang();
   const list = Array.isArray(stored) ? stored : [];
   const total = Math.max(min, list.length);
+  const template = columnTemplate(cols, { del });
+  const rowStyle = { '--cols': template };
 
   const setCell = (index, key, value) => {
     const next = list.slice();
@@ -339,9 +364,9 @@ export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense 
 
   return (
     <div className={cx('pgtable', dense && 'pgtable--dense')}>
-      <div className={cx('pgtable__head pgtable__row', `pgtable__row--${cols.length}`)}>
+      <div className="pgtable__head pgtable__row" style={rowStyle}>
         {cols.map((c) => (
-          <span key={c.k} style={c.width ? { flex: c.width } : undefined}>
+          <span key={c.k}>
             {isEn ? c.en || englishOf(c.label) || termFor('en', c.label) : c.label}
             {!isEn && c.en && <em>{c.en}</em>}
           </span>
@@ -350,13 +375,12 @@ export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense 
       </div>
 
       {Array.from({ length: total }).map((_, index) => (
-        <div className={cx('pgtable__row', `pgtable__row--${cols.length}`)} key={list[index]?.id || `blank-${index}`}>
+        <div className="pgtable__row" style={rowStyle} key={list[index]?.id || `blank-${index}`}>
           {cols.map((c) => (
             <span
               className="pgtable__cell"
               key={c.k}
               data-label={isEn ? c.en || englishOf(c.label) || termFor('en', c.label) : c.label}
-              style={c.width ? { flex: c.width } : undefined}
             >
               <Write
                 value={list[index]?.[c.k] ?? ''}
