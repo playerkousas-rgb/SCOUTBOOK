@@ -30,8 +30,11 @@
 
 ### 2.1 CORS：放行 BOOK 網域
 
-BOOK 從瀏覽器直接打你的 `/api/*`（經 BOOK 自己的 `/api/scoutbadge` 代理，但 `GET /api/troops` 與
-realtime 檢查會用 `no-cors` 探測）：
+> **更正（SCOUTBOOK v2.1.1）**：BOOK 現行版本的瀏覽器**不會**直接呼叫 scoutbadge。旅團清單、登入、讀取
+> 及申報全部經 BOOK 自己的同源 `/api/scoutbadge` 在伺服器端轉發（`GET <origin>/api/troops`、
+> `POST <origin>/api/proxy`），瀏覽器唯一接觸 scoutbadge 的地方是「前往 scoutbadge 開戶」這條另開分頁
+> 的普通連結。所以 CORS **不是** BOOK 運作的前提；你已放行的白名單可以保留（無害），日後 BOOK 若改為
+> 瀏覽器直連才會用得着。以下為原來的要求，留作紀錄：
 
 ```http
 Access-Control-Allow-Origin: https://scoutbook-five.vercel.app
@@ -45,14 +48,38 @@ Access-Control-Allow-Headers: Content-Type
 
 ### 2.2 `GET /api/troops`：旅團下拉選單的契約
 
-BOOK 的「選擇旅團」直接讀你這支 API。請保持：
+BOOK 的「已登記旅團」下拉選單由這支 API 自動讀取（BOOK 伺服器端的 `GET /api/scoutbadge` 代為請求，
+零金鑰）。現行契約（2026-11-10 按線上回應核實）——`troops` 是**以旅團編號為鍵的物件**，不是陣列：
 
 ```json
-{ "success": true, "troops": [ { "id": "string", "name": "旅團名稱", "region": "optional" } ] }
+{
+  "success": true,
+  "troops": {
+    "0082": { "id": "0082", "name": "港島第82旅", "legacyIds": [] }
+  },
+  "legacyIds": {}
+}
 ```
 
+BOOK（v2.1.1 起）怎樣使用這份清單：
+
+- **`troops` 必須是物件**：陣列、`null`、缺欄位、非 JSON 或非 2xx 一律視為「暫時讀不到清單」
+  （BOOK 回報 `upstreamOk: false`，介面顯示「暫時未能讀取已登記旅團清單」＋重新讀取），不會當成「沒有旅團」。
+- **只取 `name`（必填）與 `en`（選填）**；其他欄位（`legacyIds`、後端網址、金鑰等）一律不轉給瀏覽器。
+  沒有 `name` 的條目不列入選單。
+- **旅團編號逐字比對**：不補零、不去零，`0082` 與 `82` 是兩個不同旅團。
+- **`connected: false`**（選填）：若某旅團已登記但後端未接通，可加此旗標，BOOK 便不會把它列入選單。
+  只有明確的布林值 `false` 才生效。
+- **`_aliasOf: "<主鍵>"`**（選填）：若同一旅團以兩個鍵輸出（例如 `0082` 與 `82`），請在別名鍵加上此標記，
+  BOOK 便只列主鍵一次。主鍵不在清單、未接通、沒有名稱或本身亦是別名時，BOOK 會照樣列出別名
+  ——去重絕不會令一個旅團從選單消失。
+- 清單讀取成功但找不到用戶的旅團（或清單為空）時，BOOK 會引導用戶前往 scoutbadge 開戶及登記旅團。
 - `id` 必須**穩定不變**（BOOK 會把 `id` 存在本機 `scoutbook.scoutbadge.member.v1`）。
-- 若改了 `id`，請在回應加 `legacyIds: []` 讓 BOOK 做別名對應，否則用戶要重新選旅團。
+- `legacyIds`：你已在回應提供；**BOOK 目前尚未使用它做別名對應**——若旅團改了 `id`，用戶現時要重新選擇
+  旅團並登入一次。
+
+你現時的輸出沒有 `connected`／`_aliasOf`／`en`，BOOK 會原樣列出全部有名稱的旅團；這兩個旗標只是預留
+（與姊妹系統 `cubsbadge` 的輸出格式一致），毋須為 BOOK 而改。
 
 ### 2.3 錯誤碼：請回機器可讀 `code`，不要只回中文訊息
 
@@ -137,7 +164,7 @@ BOOK 現在有、但**不入同步**的：
 | 3 | 同一項目重複提交 | BADGE 回 `duplicate: true`，不重複入 pending |
 | 4 | token 過期 | 回 `AUTH_EXPIRED`，BOOK 自動重登一次 |
 | 5 | 200 項一批 + 30 秒 timeout | 分批成功／失敗逐項回報，BOOK 只重送失敗項 |
-| 6 | 旅團 id 改名 | 用 `legacyIds` 對應，用戶不用重選 |
+| 6 | 旅團 id 改名 | 用 `legacyIds` 對應，用戶不用重選（**BOOK 尚未實作**：現時用戶須重新選擇旅團並登入） |
 
 BOOK 端的契約測試在 `tests/scoutbadge_sync.test.mjs`（SB1 編解碼、403 封鎖、PII 剝除、
 `SCOUTBADGE_ORIGIN` 清洗）；你那邊若有對應測試，兩邊一起跑就等於端到端。
@@ -152,4 +179,4 @@ BOOK 端的契約測試在 `tests/scoutbadge_sync.test.mjs`（SB1 編解碼、40
 
 ---
 
-_最後更新：SCOUTBOOK v2.0.0（2026-11-06）。有疑問直接在本 repo 開 issue，或看 `api/scoutbadge.js` 的檔頭契約。_
+_最後更新：SCOUTBOOK v2.1.1（2026-11-10：§2.1、§2.2 及 §4 第 6 項按現行程式與線上回應更正；其餘章節仍為 v2.0.0／2026-11-06 的內容）。有疑問直接在本 repo 開 issue，或看 `api/scoutbadge.js` 的檔頭契約。_

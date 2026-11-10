@@ -1709,6 +1709,7 @@ textarea.write__input { min-height: calc(var(--rows, 2) * 24px - 4px); line-heig
 .appxcard h3 { margin: 0; font-family: var(--serif); font-size: 14px; color: var(--scout-green); }
 .appxcard p { margin: 0; font-size: 12px; color: var(--ink-2); }
 .appxbtns { display: flex; flex-wrap: wrap; gap: 7px; }
+.appxbtns:empty { display: none; }
 .imglist { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-2); }
 
 /* ==========================================================================
@@ -1963,27 +1964,35 @@ textarea.write__input { min-height: calc(var(--rows, 2) * 24px - 4px); line-heig
 }
 .legal-line__sep { margin: 0 7px; opacity: 0.55; }
 
-/* Toast */
+/* Toast：容器橫跨視窗後置中。以往用 left: 50% 定位，提示闊度被限死在螢幕一半，
+   手機上稍長的訊息會被擠成四五行；現在可用盡螢幕闊度，單行仍是膠囊形，多行則為圓角方塊。 */
 .toasts {
   position: fixed;
   bottom: 78px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 12px;
+  right: 12px;
   z-index: 80;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
   pointer-events: none;
 }
 .toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  max-width: 640px;
   padding: 9px 16px;
-  border-radius: 999px;
+  border-radius: 20px;
   background: rgba(13, 42, 27, 0.94);
   color: var(--foil-soft);
   border: 1px solid rgba(227, 192, 122, 0.4);
   font-size: 13px;
+  line-height: 1.55;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 }
+.toast > svg { flex: none; margin-top: 3px; }
 .toast--error { background: var(--danger); color: #fff; border-color: transparent; }
 
 /* ==========================================================================
@@ -3900,7 +3909,7 @@ html[data-print-preview] .write--multi.is-empty {
 }
 
 /* ==========================================================================
-   全屏掃描檢視頁 ＆ 個人 vsbadge 純進度同步卡片（無卡片陰影、紙本內頁對齊）
+   全屏掃描檢視頁 ＆ 個人 scoutbadge 純進度同步卡片（無卡片陰影、紙本內頁對齊）
    ========================================================================== */
 
 .app--scan {
@@ -3923,7 +3932,7 @@ html[data-print-preview] .write--multi.is-empty {
   padding: 20px clamp(14px, 3vw, 32px) 48px;
 }
 
-.vsbsync__stats {
+.scoutsync__stats {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -3936,39 +3945,54 @@ html[data-print-preview] .write--multi.is-empty {
   color: var(--ink-2);
 }
 
-.vsbsync__stats b {
+.scoutsync__stats b {
   color: var(--scout-green);
   font-size: 14px;
 }
 
-.vsbsync__login {
+.scoutsync__login {
   margin: 10px 0;
   padding: 12px;
   border: 1px solid rgba(28, 82, 54, 0.24);
+  border-radius: 6px;
   background: rgba(255, 252, 244, 0.72);
 }
 
-.vsbsync__fields {
+.scoutsync__fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   align-items: end;
 }
 
-.vsbsync__fields label {
+.scoutsync__fields > label,
+.scoutsync__field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
-.vsbsync__fields label span {
+/* 旅團選單獨佔一行：完整顯示「編號 · 旅團名稱」，方便在已登記旅團清單中直接選取 */
+.scoutsync__field {
+  grid-column: 1 / -1;
+}
+
+/* 送出按鈕獨佔一行並按文字定闊：困在半闊的格內時，英文標籤會被擠成兩行 */
+.scoutsync__fields > .btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.scoutsync__fields > label > span,
+.scoutsync__labelrow label {
   font-size: 12px;
   font-weight: 700;
   color: var(--ink-2);
 }
 
-.vsbsync__fields input,
-.vsbsync__fields select {
+.scoutsync__fields input,
+.scoutsync__fields select {
   width: 100%;
   padding: 7px 9px;
   border: 1px solid rgba(28, 82, 54, 0.28);
@@ -3979,10 +4003,105 @@ html[data-print-preview] .write--multi.is-empty {
   color: var(--ink);
 }
 
-.vsbsync__files {
+.scoutsync__files {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed rgba(28, 82, 54, 0.2);
+}
+
+.scoutsync__labelrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* 「找不到旅團？」／「返回開戶提示」：文字連結式按鈕，保留 24px 點按高度 */
+.scoutsync__hintlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--scout-green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* 未連接 scoutbadge：進度檔匯出／匯入鎖定提示 */
+.scoutsync__locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed rgba(28, 82, 54, 0.34);
+  border-radius: 8px;
+  background: rgba(28, 82, 54, 0.04);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.scoutsync__locked > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--scout-green);
+}
+
+/* 找不到旅團／清單為空：前往 scoutbadge 開戶提示（燙金淡底，與選單重點項同一套配色） */
+.scoutsync__notfound {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(169, 133, 63, 0.45);
+  border-radius: 8px;
+  background: rgba(227, 192, 122, 0.18);
+  color: var(--ink);
+}
+
+.scoutsync__notfound > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--scout-green);
+}
+
+.scoutsync__notfound-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 標題在窄螢幕換行時只在標點或空格處斷行（不把「前往」「旅團」等詞語拆開），並平均分配兩行字數；
+   overflow-wrap 作保底，極窄螢幕仍可斷行而不溢出。 */
+.scoutsync__notfound-body strong {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.scoutsync__notfound-body p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.scoutsync__notfound-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .qrsignoff-in__triggers {
@@ -4283,7 +4402,7 @@ html[data-print-preview] .write--multi.is-empty {
   .coverart__awardnote { display: none; }
 }
 
-/* 獨立模式提示（沒有 /api/cubbadge 的純靜態部署） */
+/* 獨立模式提示（沒有 /api/scoutbadge 的純靜態部署） */
 .scoutsync__offline {
   display: flex;
   align-items: flex-start;
@@ -4322,7 +4441,9 @@ html[data-print-preview] .write--multi.is-empty {
 .checklist__text { min-width: 0; }
 
 @media print {
-  .scoutsync__offline { display: none; }
+  .scoutsync__offline,
+  .scoutsync__locked,
+  .scoutsync__notfound { display: none; }
 }
 
 

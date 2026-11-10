@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { useToast, Crest, Icon } from '../ui.jsx';
-import { demoBook, importFromBadge, newBook } from '@shared/book.js';
+import { demoBook, newBook } from '@shared/book.js';
 import { persistBook } from '../bookStore.js';
+import { isBadgeProgressFile, isBookBackupFile } from '../scoutbadgeBridge.js';
 import { navigate } from '../router.jsx';
 import { useLang } from '../i18n.jsx';
 
@@ -39,22 +40,21 @@ export default function Welcome({ onReady, onLeader }) {
     reader.onload = () => {
       try {
         const data = JSON.parse(String(reader.result));
-        if (data?.member && data?.pages) {
+        // 歡迎頁只還原完整的 SCOUTBOOK 備份（純本機、離線）。
+        if (isBookBackupFile(data)) {
           start(newBook(data), '/p/contents');
           push(isEn ? 'Backup restored' : '備份已還原');
           return;
         }
-        if (data?.progress || data?.otherBadges || data?.flatProgress || Array.isArray(data?.members) || data?.schema?.includes('scoutbadge')) {
-          const res = importFromBadge(data, newBook());
-          start(res.book, '/p/contents');
-          push(
+        // scoutbadge 進度檔不可在此直接匯入：必須先有紀錄冊，並於數位附錄連接 scoutbadge 帳戶。
+        if (isBadgeProgressFile(data)) {
+          throw new Error(
             isEn
-              ? `Imported ${res.imported} leader-verified items from scoutbadge`
-              : `已從 scoutbadge 匯入 ${res.imported} 項領袖已核實進度`,
+              ? 'This is a scoutbadge progress file. Create or open a record book first, then connect your scoutbadge account in the Digital Appendix to import it.'
+              : 'scoutbadge 進度檔需先建立或開啟紀錄冊，並於「數位附錄」連接 scoutbadge 帳戶後方可匯入。',
           );
-          return;
         }
-        throw new Error(isEn ? 'Not a SCOUTBOOK or scoutbadge JSON file' : '這不是 SCOUTBOOK 或 scoutbadge 備份檔');
+        throw new Error(isEn ? 'Not a SCOUTBOOK backup file' : '這不是 SCOUTBOOK 備份檔');
       } catch (err) {
         push(err.message || (isEn ? 'Invalid file format' : '檔案格式不正確'), 'error');
       }
@@ -201,7 +201,18 @@ export default function Welcome({ onReady, onLeader }) {
               ? 'No sign-up or cloud sync. Data lives on this device — export a backup before switching phones.'
               : '沒有「註冊」或「登入」。資料留在這部裝置；換機前請在選單匯出備份。'}
           </p>
-          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => importFile(e.target.files?.[0])} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              // 清空選擇，令同一個檔案被拒絕後可以再揀一次。
+              e.target.value = '';
+              importFile(file);
+            }}
+          />
         </form>
       </div>
     </div>

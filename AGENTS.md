@@ -21,14 +21,14 @@
 
 ## 3. 不可退讓底線（Non-Negotiables）
 
-1. **BOOK 必須可獨立運作**：不得讓任何核心功能（逐頁填寫、簽名、表格、列印、二維碼、備份還原）依賴 `/api/*` 或網絡；`scoutbadge` 同步只屬可選加速，偵測失敗必須安全降級為「獨立模式」並保留本機 JSON 交換。
+1. **BOOK 必須可獨立運作**：不得讓任何核心功能（逐頁填寫、簽名、表格、列印、二維碼、備份還原）依賴 `/api/*` 或網絡；`scoutbadge` 同步只屬可選加速，偵測失敗必須安全降級為「獨立模式」，完整紀錄冊備份與還原必須照常可用。**唯一例外是 scoutbadge 進度檔**（已核實進度／「待領袖核實」申報檔）：它只對 scoutbadge 帳戶有意義，必須先在「數位附錄」連接並登入 scoutbadge 才可匯出或匯入；封面歡迎頁與選單不得另設繞過同步卡的匯入入口（取捨見 [`docs/adr/0003-badge-progress-files-require-connection.md`](docs/adr/0003-badge-progress-files-require-connection.md)）。
 2. **BOOK 只服務一位成員**：不設全團名冊、批量簽核工作台、多成員切換槽——那些屬 `scoutbadge`（BADGE）。新增任何「一次看多位成員」的介面即屬越界。
 3. **零個人資料同步**：跨系統只准傳 `SCOUT ID`、項目代號及日期；伺服器端必須硬性剝除姓名、電話、地址、家長／監護人資料、相片及任何其他成員紀錄。`pendingRequests` **永不**錄入 BOOK。
 4. **不可自我核實**：BOOK 送出的進度只可經 `requestComplete` 變成 `status: 'pending'`；`save`／`saveOtherBadge`／`reviewRequest` 一律回 `403`；只有領袖在 BADGE 內按 CONFIRM 才算完成。
 5. **版權擺位僅三處**：封面頁腳 `LegalLine`、數位附錄 `LegalNote`、選單「關於」`LegalNote`。其餘頁面、列印及表格不得重複。
 6. **童軍綠是主色，且對比不可退讓**：封面為綠布面（`#143b28 → #08180f`），**金字（`#f6e6bb`）只准配深綠 `#143b28`（10.06:1）**；內頁綠墨標題 `#1c5236` 配象牙紙 `#f7f2e7`（8.14:1）；金底按鈕一律用深炭字 `#1a1206`（10.67:1）。中英文完全分開，一鍵切換，不得並排塞入同一表格。色值以 `web/src/styles.css` 實裝為準，改動必須同步重算 `docs/design-review.md`。
 7. **項目 ID 單一真相**：任何 `L1-*`…`L5-*`、`SC-*-*` 的改動必須先在 `scoutbadge/data/items.json` 落地，再執行 `npm run syllabus`，並更新 `tests/fixtures/scoutbadge-ids.json`；測試會以 sha256 與清單鎖死。BOOK 內部鍵＝官方編號原文，不得另起映射。
-8. **四處版本號（V）與體積預算（S7 / G11）**：任何可見更新須同步遞增 ①`package.json` ②`shared/book.js`（`APP_VERSION`）③`web/index.html`（`meta[name="app-version"]`、`window.APP_VERSION`）④**`web/public/sw.js` 的 `CACHE_NAME` 版本尾碼**（`scoutbook-cache-v3 → v4`），並更新 `CHANGELOG.md`。只改程式不改快取名，已安裝到主畫面的 APP 永遠收舊版面。`dist/` 總體積須 `< 5 MB`，`web/public/icons/` 9 個圖示總和須 `<= 260 KB`。
+8. **四處版本號（V）與體積預算（S7 / G11）**：任何可見更新須同步遞增 ①`package.json` ②`shared/book.js`（`APP_VERSION`）③`web/index.html`（`meta[name="app-version"]`、`window.APP_VERSION`）④**`web/public/sw.js` 的 `CACHE_NAME` 版本尾碼**（`scoutbook-cache-v4 → v5`），並更新 `CHANGELOG.md`。只改程式不改快取名，已安裝到主畫面的 APP 永遠收舊版面。`dist/` 總體積須 `< 5 MB`，`web/public/icons/` 9 個圖示總和須 `<= 260 KB`。
 9. **禁止在 `.js/.mjs/.jsx` 寫 `// v1.0` 行內版本註解（F15）**：版本號只寫在常數、HTML meta 與 `CHANGELOG.md`。
 10. **`LEADER_CODE` 不得加 `VITE_` 前綴**：只在 `api/leader.js` 以 `crypto.timingSafeEqual` 比對；前端 bundle 不得出現任何密碼。
 11. **欄寬先量度、後定寬（L）**：不得照官方 PDF 比例或憑感覺定欄寬。名稱欄禁用 `minmax(0, 1fr)` 獨佔剩餘闊度，須用 `minmax(clamp(下限, 百分比, 上限), 比例fr)` 並約佔 40–50%；日期欄下限 ≥ `--col-date-min`（104px，要放得下完整 `YYYY-MM-DD` 連日曆鈕）；表頭與表身共用同一組 `grid-template-columns`；簽署欄只按姓名計寬、不預填職銜；簽名圖須同時限寬限高。**禁用 `container-type`／container query**（會困住 `position: fixed` 彈窗），改以百分比 `clamp` ＋ 斷點分段。任何改動須跑 `python3 scripts/check_columns.py`。

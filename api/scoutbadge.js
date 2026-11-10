@@ -12,6 +12,9 @@
       必須由團長在 scoutbadge 按 CONFIRM 方為完成。
    4. 零金鑰：旅團下拉選單由 `SCOUTBADGE_ORIGIN` 的 `GET /api/troops` 自動讀取，業務請求
       經 `POST /api/proxy` 轉發；BOOK 不存放任何 Google Sheet URL 或 API Key。
+   5. 已登記旅團清單：`GET` 回傳 `upstreamOk`（上游清單是否讀取成功），並略過未接通
+      （`connected === false`）的旅團及重複的別名鍵（帶 `_aliasOf` 而主鍵本身會被列出）。
+      旅團編號逐字比對，不補零、不去零（`0082` 與 `82` 是兩個不同旅團）。
    ========================================================================== */
 
 import { toBadgeId, ITEM_INDEX, toBookId } from '../shared/syllabus.js';
@@ -93,6 +96,28 @@ function getLocalTroopRegistry() {
     }
   }
   return out;
+}
+
+// 上游旅團條目可否列入選單：必須有名稱，且未被上游明確標示為未接通（connected === false）。
+function isListableTroop(info) {
+  return Boolean(info && typeof info === 'object' && !Array.isArray(info) && info.name && info.connected !== false);
+}
+
+// 別名條目（帶 _aliasOf）所指向的主鍵；沒有標記或自己指向自己時回傳空字串。
+function aliasTargetOf(id, info) {
+  const raw = info && typeof info === 'object' ? info._aliasOf : '';
+  const target = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+  return target && target !== id ? target : '';
+}
+
+// 只有當主鍵本身會被列出（有名稱、已接通、並非另一個別名）時才略過別名，
+// 確保去重只會移除重複項，絕不會令一個旅團從選單消失。
+function isDuplicateAlias(id, info, list) {
+  const primaryId = aliasTargetOf(id, info);
+  // 只認清單自身的鍵：`constructor`、`toString` 等原型鏈屬性不算主鍵。
+  if (!primaryId || !Object.prototype.hasOwnProperty.call(list, primaryId)) return false;
+  const primary = list[primaryId];
+  return isListableTroop(primary) && !aliasTargetOf(primaryId, primary);
 }
 
 function sameId(a, b) {
@@ -295,6 +320,9 @@ export default async function handler(req, res) {
     for (const [id, t] of Object.entries(localRegistry)) {
       troops[id] = { name: t.name, ...(t.en ? { en: t.en } : {}) };
     }
+    // upstreamOk：scoutbadge 的 /api/troops 是否成功回傳旅團清單。
+    // 介面據此分辨「真的沒有已登記旅團」與「暫時讀不到清單」。
+    let upstreamOk = false;
     try {
       const up = await fetch(`${origin}/api/troops`, {
         method: 'GET',
@@ -303,9 +331,13 @@ export default async function handler(req, res) {
       });
       if (up.ok) {
         const json = await up.json().catch(() => null);
-        if (json?.troops && typeof json.troops === 'object') {
-          for (const [id, info] of Object.entries(json.troops)) {
-            if (!troops[id] && info && typeof info === 'object' && info.name) {
+        const list = json?.troops;
+        if (list && typeof list === 'object' && !Array.isArray(list)) {
+          upstreamOk = true;
+          for (const [id, info] of Object.entries(list)) {
+            if (!isListableTroop(info)) continue;
+            if (isDuplicateAlias(id, info, list)) continue;
+            if (!troops[id]) {
               troops[id] = { name: String(info.name), ...(info.en ? { en: String(info.en) } : {}) };
             }
           }
@@ -318,6 +350,7 @@ export default async function handler(req, res) {
       success: true,
       origin,
       privacy: 'progress-only',
+      upstreamOk,
       troops,
     });
   }

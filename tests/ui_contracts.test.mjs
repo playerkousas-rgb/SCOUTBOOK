@@ -388,7 +388,7 @@ test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTM
   }
 
   const sw = read('web/public/sw.js');
-  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v3'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v4'"));
   assert.ok(!sw.includes('cubbook') && !sw.includes('vsbook'));
   // 預快取清單每一項都必須真實存在，否則離線首次載入會破圖
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];
@@ -398,6 +398,92 @@ test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTM
     if (rel) assert.ok(fs.existsSync(rel), `Service Worker 預快取檔案不存在：${url}`);
   }
   assert.ok(!fs.existsSync(path.join(pub, 'img')), '不應保留其他支部圖片');
+});
+
+test('scoutbadge 同步卡樣式：用到的類別全部有規則、鎖定與開戶提示不列印、圖示名稱必須存在', () => {
+  const css = read('web/src/styles.css');
+  const card = read('web/src/components/ScoutBadgeSyncCard.jsx');
+
+  // 卡片用到的每個 scoutsync__* 類別都要有樣式規則（舊版樣式表寫成 .vsbsync__*，整張卡其實沒有樣式）
+  const used = [...new Set(card.match(/scoutsync__[a-z-]+/g))].sort();
+  const styled = [...new Set([...css.matchAll(/\.(scoutsync__[a-z-]+)/g)].map((m) => m[1]))].sort();
+  assert.ok(used.length >= 12, '同步卡應有登入、旅團選單、鎖定提示、開戶提示等區塊');
+  assert.deepEqual(styled, used, '同步卡用到的類別與樣式表的規則必須一一對應（不可漏寫，也不留死規則）');
+  for (const cls of ['scoutsync__files', 'scoutsync__locked', 'scoutsync__notfound', 'scoutsync__notfound-actions', 'scoutsync__hintlink']) {
+    assert.ok(used.includes(cls), `同步卡缺少 .${cls}`);
+  }
+  for (const stale of ['vsbsync', 'roversync', 'cubsync']) {
+    assert.equal(css.includes(stale), false, `styles.css 仍有姊妹倉類別前綴 ${stale}`);
+    assert.equal(card.includes(stale), false, `同步卡仍有姊妹倉類別前綴 ${stale}`);
+  }
+
+  // 列印紀錄冊時不印出連線狀態、鎖定提示及開戶提示
+  const printBlocks = [...css.matchAll(/@media print\s*\{([\s\S]*?)\n\}/g)].map((m) => m[1]);
+  const syncPrint = printBlocks.find((block) => block.includes('.scoutsync__'));
+  assert.ok(syncPrint, '缺少同步卡的列印規則');
+  for (const cls of ['.scoutsync__offline', '.scoutsync__locked', '.scoutsync__notfound']) {
+    assert.ok(syncPrint.includes(cls), `列印時必須隱藏 ${cls}`);
+  }
+  assert.match(syncPrint, /\.scoutsync__notfound\s*\{\s*display:\s*none;\s*\}/);
+
+  // 空的按鈕列不佔位（未連接時同步卡沒有任何檔案按鈕）
+  assert.match(css, /\.appxbtns:empty\s*\{\s*display:\s*none;\s*\}/);
+
+  // 開戶提示標題只在標點或空白處換行，不把中文詞語從中間拆開
+  const title = css.match(/\.scoutsync__notfound-body strong\s*\{([^}]*)\}/);
+  assert.ok(title, '缺少開戶提示標題規則');
+  assert.ok(title[1].includes('word-break: keep-all') && title[1].includes('overflow-wrap: anywhere'));
+
+  // Icon 找不到名稱時會靜默退回「書本」圖示，所以每個寫死的圖示名稱都必須存在
+  const ui = read('web/src/ui.jsx');
+  const pathsBlock = ui.match(/const PATHS = \{([\s\S]*?)\n\};/);
+  assert.ok(pathsBlock, 'ui.jsx 需有 PATHS 圖示表');
+  const iconNames = new Set([...pathsBlock[1].matchAll(/^\s+([A-Za-z]\w*):\s*'/gm)].map((m) => m[1]));
+  for (const name of ['lock', 'refresh', 'external', 'alert', 'info', 'download', 'upload']) {
+    assert.ok(iconNames.has(name), `PATHS 缺少圖示 ${name}`);
+  }
+  let checked = 0;
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!/\.jsx$/.test(entry.name)) continue;
+      const src = fs.readFileSync(full, 'utf8');
+      for (const tag of src.matchAll(/<Icon\b[^>]*?\bname=(?:"([^"]+)"|\{([^}]*)\})/g)) {
+        // name="x"，或 name={cond ? 'a' : 'b'}（只取三元運算的兩個結果，不取條件內的字串）
+        const names = tag[1] ? [tag[1]] : [...tag[2].matchAll(/[?:]\s*'([^']+)'/g)].map((m) => m[1]);
+        assert.ok(names.length > 0, `${path.relative(root, full)} 的圖示名稱無法靜態檢查：${tag[0]}`);
+        for (const name of names) {
+          checked += 1;
+          assert.ok(iconNames.has(name), `${path.relative(root, full)} 用了不存在的圖示 ${name}`);
+        }
+      }
+    }
+  };
+  walk(path.join(root, 'web/src'));
+  assert.ok(checked >= 30, `應檢查到全站的圖示用法（只找到 ${checked} 個）`);
+});
+
+test('Toast 提示橫跨視窗後置中，長訊息在手機上不會被擠成窄柱', () => {
+  const css = read('web/src/styles.css');
+  const box = css.match(/\n\.toasts\s*\{([^}]*)\}/);
+  assert.ok(box, '缺少 .toasts 規則');
+  // 以往用 left: 50% 加 translateX(-50%) 置中：收縮闊度被限死在視窗的一半
+  assert.equal(/left:\s*50%/.test(box[1]), false, '.toasts 不得用 left: 50% 定位');
+  assert.equal(box[1].includes('transform'), false, '.toasts 不得用 transform 置中');
+  assert.match(box[1], /\bleft:\s*\d+px;/);
+  assert.match(box[1], /\bright:\s*\d+px;/);
+  assert.ok(box[1].includes('align-items: center'));
+  assert.ok(box[1].includes('pointer-events: none'), '提示容器橫跨視窗，絕不可攔截點按');
+
+  const toast = css.match(/\n\.toast\s*\{([^}]*)\}/);
+  assert.ok(toast, '缺少 .toast 規則');
+  assert.match(toast[1], /max-width:\s*\d+px;/, '桌面闊度下長訊息須有上限');
+  assert.equal(/border-radius:\s*999px/.test(toast[1]), false, '多行訊息不可用膠囊圓角（會切走文字角落）');
+  assert.equal(/pointer-events:\s*auto/.test(toast[1]), false);
 });
 
 test('package.json / vite.config.js 已完全改用 scoutbook 及 /api/scoutbadge', () => {
