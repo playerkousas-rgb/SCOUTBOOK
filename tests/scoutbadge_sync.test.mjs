@@ -68,8 +68,19 @@ function stubFetch(impl) {
 const okJson = (obj) => ({ ok: true, json: async () => obj });
 
 test('後端來源只接受 https；開發測試可明確開啟本機位址', () => {
+  // 未設定環境變數：預設就是 scoutbadge 的正式網址
+  withEnv({ SCOUTBADGE_ORIGIN: undefined }, () => {
+    assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
+  });
+  withEnv({ SCOUTBADGE_ORIGIN: '   ' }, () => {
+    assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
+  });
   withEnv({ SCOUTBADGE_ORIGIN: 'https://scoutbadge.vercel.app/' }, () => {
     assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
+  });
+  // 自訂的 https 來源照用，但只取 origin（路徑、查詢字串一律丟棄）
+  withEnv({ SCOUTBADGE_ORIGIN: 'https://badge.example.org/some/path?x=1' }, () => {
+    assert.equal(resolveBadgeOrigin(), 'https://badge.example.org');
   });
   withEnv({ SCOUTBADGE_ORIGIN: 'http://evil.example.com' }, () => {
     assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
@@ -83,6 +94,13 @@ test('後端來源只接受 https；開發測試可明確開啟本機位址', ()
   withEnv({ SCOUTBADGE_ORIGIN: 'http://127.0.0.1:8787', SCOUTBOOK_PROXY_TEST: '1', VERCEL: undefined }, () => {
     assert.equal(resolveBadgeOrigin(), 'http://127.0.0.1:8787');
   });
+  // 本機位址只在明確開啟測試旗標、而且不在 Vercel 上才接受
+  withEnv({ SCOUTBADGE_ORIGIN: 'http://127.0.0.1:8787', SCOUTBOOK_PROXY_TEST: undefined, VERCEL: undefined }, () => {
+    assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
+  });
+  withEnv({ SCOUTBADGE_ORIGIN: 'http://127.0.0.1:8787', SCOUTBOOK_PROXY_TEST: '1', VERCEL: '1' }, () => {
+    assert.equal(resolveBadgeOrigin(), 'https://scoutbadge.vercel.app');
+  });
 });
 
 test('GET /api/scoutbadge：零金鑰旅團清單，永不回傳後端網址或 API key', async () => {
@@ -91,16 +109,176 @@ test('GET /api/scoutbadge：零金鑰旅團清單，永不回傳後端網址或 
     try {
       const res = await callApi('GET');
       assert.equal(res.status, 200);
+      assert.deepEqual(Object.keys(res.body), ['success', 'origin', 'privacy', 'upstreamOk', 'troops']);
       assert.equal(res.body.success, true);
+      assert.equal(res.body.origin, 'https://scoutbadge.vercel.app');
       assert.equal(res.body.privacy, 'progress-only');
+      assert.equal(res.body.upstreamOk, true);
       assert.equal(res.body.troops.T12.name, '沙田第 12 旅');
       assert.equal(res.body.troops.T12.en, '12th Sha Tin');
       assert.deepEqual(res.body.troops.T99, { name: '遠端旅團', en: 'Remote' });
       const json = JSON.stringify(res.body);
       assert.equal(json.includes('SECRET-KEY-123'), false);
       assert.equal(json.includes('script.google.com'), false);
+      // 清單由 scoutbadge 的 GET /api/troops 自動讀取，BOOK 不帶任何金鑰
+      assert.equal(stub.calls.length, 1);
+      assert.equal(stub.calls[0].url, 'https://scoutbadge.vercel.app/api/troops');
+      assert.equal(stub.calls[0].init.method, 'GET');
+      assert.equal(stub.calls[0].init.body, undefined);
     } finally {
       stub.restore();
+    }
+  });
+});
+
+// 由 /api/scoutbadge 回傳的旅團編號（已排序），方便逐個情境比對。
+async function listedTroopIds(upstreamTroops) {
+  const stub = stubFetch(() => okJson({ success: true, troops: upstreamTroops }));
+  try {
+    const res = await callApi('GET');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.upstreamOk, true);
+    return { ids: Object.keys(res.body.troops).sort(), troops: res.body.troops };
+  } finally {
+    stub.restore();
+  }
+}
+
+test('GET /api/scoutbadge：已登記旅團清單略過重複別名與未接通旅團，只輸出名稱', async () => {
+  // 與 cubsbadge 現行輸出同一格式：主鍵帶 _aliases，別名鍵帶 _aliasOf，另有 connected 旗標
+  const { ids, troops } = await listedTroopIds({
+    '0082': { id: '0082', name: '港島第 82 旅', en: '82nd Hong Kong', connected: true, _aliases: ['82'], legacyIds: [] },
+    82: { name: '港島第 82 旅', en: '82nd Hong Kong', connected: true, _aliasOf: '0082' },
+    T99: { name: '遠端旅團', en: 'Remote' },
+    OFF: { name: '未接通旅團', connected: false },
+    NONAME: { en: 'No Chinese name' },
+    BROKEN: null,
+    LIST: ['not', 'a', 'troop'],
+    TEXT: 'not a troop',
+  });
+  assert.deepEqual(ids, ['0082', 'T99']);
+  assert.deepEqual(troops['0082'], { name: '港島第 82 旅', en: '82nd Hong Kong' }, '只輸出 name／en，不外洩上游的內部欄位');
+  assert.deepEqual(troops.T99, { name: '遠端旅團', en: 'Remote' });
+  assert.equal(troops['82'], undefined, '帶 _aliasOf 而主鍵會被列出時，別名鍵屬重複項');
+  assert.equal(troops.OFF, undefined, 'connected === false 的旅團不可供選取');
+
+  // scoutbadge 現行輸出（沒有 _aliasOf／connected／en）原封不動通過
+  const live = await listedTroopIds({
+    1187: { id: '1187', name: '新界東第 1187 旅', legacyIds: [] },
+    '0004': { id: '0004', name: '港島第 4 旅', legacyIds: [] },
+    '0082': { id: '0082', name: '港島第 82 旅', legacyIds: [] },
+  });
+  assert.deepEqual(live.ids, ['0004', '0082', '1187']);
+  assert.deepEqual(live.troops['0004'], { name: '港島第 4 旅' });
+});
+
+test('GET /api/scoutbadge：去重絕不令旅團消失，旅團編號逐字比對（0082 ≠ 82）', async () => {
+  const cases = [
+    ['沒有 _aliasOf 標記：0082 與 82 是兩個不同旅團', { '0082': { name: '港島第 82 旅' }, 82: { name: '九龍第 82 旅' } }, ['0082', '82']],
+    ['主鍵不在清單：別名照樣列出', { 82: { name: 'A', _aliasOf: '0082' } }, ['82']],
+    ['主鍵未接通：別名照樣列出', { '0082': { name: 'A', connected: false }, 82: { name: 'A', _aliasOf: '0082' } }, ['82']],
+    ['主鍵沒有名稱：別名照樣列出', { '0082': { en: 'A' }, 82: { name: 'A', _aliasOf: '0082' } }, ['82']],
+    ['自己指向自己：不算別名', { '0082': { name: 'A', _aliasOf: '0082' } }, ['0082']],
+    ['互相指向：兩個都保留', { X: { name: 'X', _aliasOf: 'Y' }, Y: { name: 'Y', _aliasOf: 'X' } }, ['X', 'Y']],
+    ['主鍵本身是別名（只認一層）：保留', { A: { name: 'A' }, B: { name: 'B', _aliasOf: 'A' }, C: { name: 'C', _aliasOf: 'B' } }, ['A', 'C']],
+    [
+      '指向原型鏈屬性名稱：不算別名',
+      { 82: { name: 'A', _aliasOf: 'constructor' }, 83: { name: 'B', _aliasOf: 'toString' }, 84: { name: 'C', _aliasOf: '__proto__' } },
+      ['82', '83', '84'],
+    ],
+    [
+      '_aliasOf 不是字串或數字：不算別名',
+      { K1: { name: 'A', _aliasOf: '' }, K2: { name: 'B', _aliasOf: {} }, K3: { name: 'C', _aliasOf: true }, K4: { name: 'D', _aliasOf: null }, K5: { name: 'E', _aliasOf: ['K1'] } },
+      ['K1', 'K2', 'K3', 'K4', 'K5'],
+    ],
+    ['_aliasOf 是數字：照樣去重', { 82: { name: 'A' }, '0082': { name: 'A', _aliasOf: 82 } }, ['82']],
+    ['_aliasOf 前後有空白：照樣去重', { '0082': { name: 'A' }, 82: { name: 'A', _aliasOf: ' 0082 ' } }, ['0082']],
+    [
+      '旅團編號與物件內建屬性同名：照樣列出，不與原型鏈混淆',
+      JSON.parse('{"constructor":{"name":"A"},"toString":{"name":"B"},"__proto__":{"name":"C"},"hasOwnProperty":{"name":"D"}}'),
+      ['__proto__', 'constructor', 'hasOwnProperty', 'toString'],
+    ],
+    [
+      'connected 只有明確為 false 才略過',
+      { A: { name: 'A', connected: true }, B: { name: 'B' }, C: { name: 'C', connected: null }, D: { name: 'D', connected: 0 }, E: { name: 'E', connected: 'false' } },
+      ['A', 'B', 'C', 'D', 'E'],
+    ],
+  ];
+  for (const [label, upstream, expected] of cases) {
+    const { ids } = await listedTroopIds(upstream);
+    assert.deepEqual(ids, expected, label);
+  }
+});
+
+test('GET /api/scoutbadge：upstreamOk 如實回報清單是否讀取成功，失敗時仍回傳本機設定的旅團', async () => {
+  const failures = [
+    ['HTTP 503', () => ({ ok: false, status: 503, json: async () => ({}) })],
+    [
+      '網絡錯誤',
+      () => {
+        throw new TypeError('fetch failed');
+      },
+    ],
+    [
+      '回應不是 JSON',
+      () => ({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError('Unexpected token <');
+        },
+      }),
+    ],
+    ['troops 是陣列', () => okJson({ success: true, troops: [{ id: '0082', name: '港島第 82 旅' }] })],
+    ['troops 是字串', () => okJson({ success: true, troops: '0082' })],
+    ['troops 為 null', () => okJson({ success: true, troops: null })],
+    ['沒有 troops 欄位', () => okJson({ success: true })],
+    ['回應是 null', () => okJson(null)],
+  ];
+  for (const [label, impl] of failures) {
+    const stub = stubFetch(impl);
+    try {
+      const res = await callApi('GET');
+      assert.equal(res.status, 200, `${label}：橋接本身仍然可用`);
+      assert.equal(res.body.success, true, label);
+      assert.equal(res.body.upstreamOk, false, `${label}：必須回報讀不到清單`);
+      assert.deepEqual(Object.keys(res.body.troops), [], label);
+    } finally {
+      stub.restore();
+    }
+  }
+
+  // 讀取成功但真的沒有任何已登記旅團：upstreamOk 仍為 true，介面據此分辨兩種情況
+  const empty = stubFetch(() => okJson({ success: true, troops: {} }));
+  try {
+    const res = await callApi('GET');
+    assert.equal(res.body.upstreamOk, true);
+    assert.deepEqual(Object.keys(res.body.troops), []);
+  } finally {
+    empty.restore();
+  }
+
+  // 上游失敗時，BOOK 自己以環境變數設定的旅團仍然列出
+  await withEnv({ TROOP_T12_NAME: '沙田第 12 旅', TROOP_T12_BACKEND: BACKEND, TROOP_T12_APIKEY: 'SECRET-KEY-123' }, async () => {
+    const down = stubFetch(() => ({ ok: false, status: 503, json: async () => ({}) }));
+    try {
+      const res = await callApi('GET');
+      assert.equal(res.body.upstreamOk, false);
+      assert.deepEqual(Object.keys(res.body.troops), ['T12']);
+      assert.deepEqual(res.body.troops.T12, { name: '沙田第 12 旅' });
+    } finally {
+      down.restore();
+    }
+  });
+
+  // 清單來源跟隨 SCOUTBADGE_ORIGIN
+  await withEnv({ SCOUTBADGE_ORIGIN: 'https://badge.example.org/' }, async () => {
+    const custom = stubFetch(() => okJson({ success: true, troops: { '0082': { name: '港島第 82 旅' } } }));
+    try {
+      const res = await callApi('GET');
+      assert.equal(res.body.origin, 'https://badge.example.org');
+      assert.equal(custom.calls[0].url, 'https://badge.example.org/api/troops');
+    } finally {
+      custom.restore();
     }
   });
 });

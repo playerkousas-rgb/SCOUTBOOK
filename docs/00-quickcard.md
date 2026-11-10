@@ -4,7 +4,8 @@
 | :--- | :--- |
 | **定位** | 香港童軍支部個人隨身離線電子紀錄冊（紙本《童軍紀錄冊》＋ 2026 修訂版訓練綱要 ＋ `PT/18`・`P120A1`・`P120A2`）；**可獨立運作**，`scoutbadge` 同步屬可選 |
 | **頁數** | 110 頁（`p001`–`p110`）逐頁對應紙本官方編號 1–110；另加數位附錄（卷首語／制服／總覽／說明／工具） |
-| **獨立模式** | 沒有 `/api/scoutbadge`（純靜態主機）時，數位附錄自動顯示「現時以獨立模式運作」＋本機 JSON 交換；其餘功能不變 |
+| **獨立模式** | 沒有 `/api/scoutbadge`（純靜態主機）時，數位附錄自動顯示「現時以獨立模式運作」；完整紀錄冊備份／還原及其餘功能不變，只有 scoutbadge 進度檔的匯出／匯入停用 |
+| **scoutbadge 連接** | 數位附錄同步卡：旅團由 `GET /api/scoutbadge` 自動讀取已登記旅團清單（`upstreamOk` 標示清單是否讀取成功）；找不到旅團即顯示「前往 scoutbadge 開戶」；**未連接並登入前，不可匯出或匯入 scoutbadge 進度檔** |
 | **網址路由** | `/` 封面・`/p/p001`–`/p/p110` 紙本逐頁・`/p/contents` 目錄・`/p/appendix` 數位附錄・`/forms` 官方表格（`pt18`、`p120a1`、`p120a2`、`all`）・`/scan` 掃描二維碼・`/print` 整本列印 |
 | **本機儲存鍵** | `scoutbook.book.v1`（紀錄冊主體）、`scoutbook.lang`（語言 `zh`/`en`）、`scoutbook.last`（上次頁面）、`scoutbook.signoff.applied.v1`（已寫入核簽序號）、`scoutbook.scoutbadge.member.v1`（同步身分） |
 | **互通格式** | `scoutbadge.pending.v1`（以 `scoutId` 對齊 `L1-*`…`L5-*`、`SC-*-*`；BOOK 鍵＝官方編號原文，零映射） |
