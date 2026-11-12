@@ -337,6 +337,15 @@ export default function ScoutBadgeSyncCard({ readOnly = false }) {
   const showOpenAccountNotice =
     bridge === 'ready' && !session && ((noTroopsFound && !manualTroop) || (troopNotListed && showLogin));
 
+  if (book?.meta?.demo) {
+    return (
+      <section className="appxcard scoutsync">
+        <h3>{isEn ? 'scoutbadge sync unavailable in demo' : '示範資料不可同步 scoutbadge'}</h3>
+        <p>{isEn ? 'This book contains fictional test records. Start a blank book or restore your own backup before connecting.' : '此紀錄冊含虛構測試資料；請先建立空白紀錄冊或還原自己的備份，才可連接。'}</p>
+      </section>
+    );
+  }
+
   return (
     <section className="appxcard scoutsync">
       <h3>

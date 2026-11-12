@@ -58,6 +58,12 @@ function FCell({ label, en, k, values, set, type = 'text', span = 1, placeholder
   );
 }
 
+function DemoNotice() {
+  const { book } = useBook();
+  const { isEn } = useLang();
+  return book?.meta?.demo ? <div className="demo-notice">{isEn ? 'SAMPLE ONLY — NOT FOR SUBMISSION' : '示範樣本・只供測試・不可遞交'}</div> : null;
+}
+
 function FormHead({ meta, values }) {
   const { isEn } = useLang();
   return (
@@ -89,6 +95,7 @@ function SectionTitle({ children, en }) {
 
 function SignatureLine({ label, en, sig }) {
   const { isEn } = useLang();
+  const { book } = useBook();
   return (
     <div className="ptsignbox">
       <span className="ptcell__lbl">
@@ -96,7 +103,7 @@ function SignatureLine({ label, en, sig }) {
         {!isEn && en && <em>{en}</em>}
       </span>
       <div className="ptsignbox__ink">
-        {sig?.png ? <img src={sig.png} alt={label} /> : <span className="ptblank" />}
+        {sig?.png ? <img src={sig.png} alt={label} /> : book?.meta?.demo ? <span>{isEn ? 'Sample signature' : '示範簽署'}</span> : <span className="ptblank" />}
       </div>
       {sig?.name && <small>{sig.name}</small>}
     </div>
@@ -238,6 +245,7 @@ function FormPT18() {
   return (
     <>
       <article className="a4sheet ptform">
+        <DemoNotice />
         <FormHead meta={FORM_META.pt18} values={v} />
 
         <SectionTitle en="A. Personal Particulars">甲、個人資料</SectionTitle>
@@ -296,6 +304,7 @@ function FormPT18() {
       </article>
 
       <article className="a4sheet ptform">
+        <DemoNotice />
         <SectionTitle en="C. Required Badges & Certificates">丙、所需徽章及證書</SectionTitle>
         <table className="pttable">
           <thead>
@@ -331,8 +340,8 @@ function FormPT18() {
         </table>
         <p className="ptnotes">
           {isEn
-            ? 'Dates must match the badge records on pages 24–39 and the leadership course on page 58.'
-            : '日期須與第 24–39 頁徽章紀錄及第 58 頁領導才訓練班一致。'}
+            ? 'Check dates against the badge records on pages 78–82 and the leadership course certificate.'
+            : '日期須與第 78–82 頁徽章紀錄及領導才訓練班證書一致。'}
         </p>
 
         <SectionTitle en="D. Chief Scout's Award Training Record">丁、總領袖獎章訓練紀錄</SectionTitle>
@@ -428,6 +437,7 @@ function FormP120A1() {
   return (
     <>
       <article className="a4sheet ptform">
+        <DemoNotice />
         <FormHead meta={FORM_META.p120a1} values={v} />
 
         <SectionTitle en="A. Applicant (to be completed by the applicant)">甲、申請人資料（由申請人填寫）</SectionTitle>
@@ -491,6 +501,7 @@ function FormP120A1() {
       </article>
 
       <article className="a4sheet ptform">
+        <DemoNotice />
         <SectionTitle en="B. Examiner (to be completed by the examiner)">乙、主考資料（由主考填寫）</SectionTitle>
         <div className="ptgrid">
           <FCell label="主考姓名" en="Examiner Name" k="examinerName" values={v} set={set} span={2} />
@@ -638,6 +649,7 @@ function FormP120A2() {
 
   return (
     <article className="a4sheet ptform">
+        <DemoNotice />
       <FormHead meta={FORM_META.p120a2} values={v} />
 
       <SectionTitle en="Linked Application">關連申請</SectionTitle>

@@ -33,7 +33,7 @@ function loadServiceWorker() {
         if (!cacheStore.has(name)) cacheStore.set(name, makeCache(name));
         return cacheStore.get(name);
       },
-      keys: async () => ['scoutbook-cache-v1', 'scoutbook-cache-v2', 'scoutbook-cache-v3', 'scoutbook-cache-v4', 'other-app-cache'],
+      keys: async () => ['scoutbook-cache-v1', 'scoutbook-cache-v2', 'scoutbook-cache-v3', 'scoutbook-cache-v4', 'scoutbook-cache-v5', 'scoutbook-cache-v6', 'other-app-cache'],
       delete: async (k) => { calls.deleted.push(k); return true; },
     },
     fetch: async () => new Response('ok'),
@@ -58,7 +58,7 @@ test('SW：預快取／啟用清走所有舊 cache，且不動其他 app 的 cac
   handlers.activate({ waitUntil: (p) => { activatePromise = p; } });
   await activatePromise;
 
-  assert.deepEqual(calls.deleted.sort(), ['scoutbook-cache-v1', 'scoutbook-cache-v2', 'scoutbook-cache-v3'], '只刪自家舊版快取');
+  assert.deepEqual(calls.deleted.sort(), ['scoutbook-cache-v1', 'scoutbook-cache-v2', 'scoutbook-cache-v3', 'scoutbook-cache-v4', 'scoutbook-cache-v5'], '只刪自家舊版快取');
   assert.equal(calls.claim, 1, 'activate 後要 clients.claim()');
   assert.equal(calls.skipWaiting, 0, 'install／activate 不得自動 skipWaiting（新版要停在 waiting 等用戶按）');
 });

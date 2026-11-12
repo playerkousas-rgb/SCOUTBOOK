@@ -185,7 +185,7 @@ export default function Welcome({ onReady, onLeader }) {
                 push(isEn ? 'Demo record book loaded' : '已載入示範紀錄冊');
               }}
             >
-              {isEn ? 'Try Demo Data' : '用示範資料看看'}
+              {isEn ? 'Load fictional Chief Scout print demo' : '載入總領袖申請列印示範（虛構資料）'}
             </button>
             <button type="button" className="btn btn--onpaper" onClick={() => fileRef.current?.click()}>
               {isEn ? 'Import Backup' : '匯入備份'}

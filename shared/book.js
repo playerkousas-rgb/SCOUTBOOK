@@ -3,11 +3,7 @@
 // 純本機儲存（localStorage），一次只服務「這一位」成員的紀錄冊。
 // 全團名冊、批量簽核、多成員切換一律屬 scoutbadge（旅團進度表）範疇，本倉庫不做。
 //
-// 頁序說明：紙本《童軍紀錄冊》未能取得，本頁序為自創（頭七頁對齊 BOOK 家族；
-// 總領袖獎章置於訓練計劃及活動紀錄之後、專科徽章之前：第 34–46 頁為總領袖獎章
-// 考驗紀錄，第 47–62 頁為專科徽章）。待取得紙本後覆核。
-// 進度資料一律以穩定鍵（progress.*、otherBadges.*、award_L5 …）儲存；逐頁雜項
-// 以 pages.pNN 儲存，頁序調整時由 PAGE_ID_MIGRATION 自動搬遷（見下）。
+// 頁序按官方紙本編號 1–110；舊版頁面資料由頁碼遷移表搬遷。
 // ==========================================================================
 
 import {
@@ -51,7 +47,7 @@ export {
   officialPageByNo,
 };
 
-export const APP_VERSION = 'v2.1.1';
+export const APP_VERSION = 'v2.1.3';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 
@@ -887,42 +883,64 @@ export function importFromBadge(json, srcBook, { expectedScoutId = '' } = {}) {
 /** 整本列印頁序（不包括數位附錄及目錄）。 */
 export const PRINT_PAGES = SECTIONS.filter((s) => s.id !== 'appendix');
 
-/** 示範紀錄冊：只示範版面，不假裝任何未經領袖核實的日期。 */
+/** 虛構的列印測試資料；不含真實簽名或 scoutbadge 已核實狀態。 */
 export function demoBook() {
   const book = newBook();
-  book.member = {
-    ...book.member,
-    nameZh: '陳小鷹',
-    nameEn: 'CHAN Siu-ying',
-    scoutId: '0012345678',
-    gender: 'M',
-    dob: '2013-04-12',
-    schoolLevel: '中一',
-    school: '沙田第一中學',
-    region: '新界東地域',
-    district: '沙田北區',
-    group: '沙田第 12 旅',
-    troop: '沙田第 12 旅童軍團',
-    patrol: '鷹小隊',
-    sl: '李樹明',
-    dateJoined: '2024-09-01',
-  };
-  const seed = [
-    ['L1-M1', '2024-09-14'],
-    ['L1-M2', '2024-09-21'],
-    ['L1-M3', '2024-09-28'],
-    ['L1-M4', '2024-10-05'],
-    ['L1-M5', '2024-10-12'],
-    ['L2-A1', '2025-01-11'],
-    ['L2-A2', '2025-01-18'],
-    ['L2-B1', '2025-02-08'],
-  ];
-  seed.forEach(([id, date]) => {
-    book.progress[id] = { date, confirmedByBadge: true, confirmedAt: new Date().toISOString() };
+  book.meta.demo = true;
+  Object.assign(book.member, {
+    nameZh: '陳小鷹', nameEn: 'CHAN Siu-ying', scoutId: '0012345678',
+    gender: 'M', dob: '2013-04-12', schoolLevel: '中二', school: '沙田第一中學',
+    hkidPrefix: 'A123', region: '新界東地域', district: '沙田北區',
+    group: '沙田第 12 旅', troop: '沙田第 12 旅童軍團', patrol: '鷹小隊',
+    addressZh: '香港示範街 1 號', addressEn: '1 Example Street, Hong Kong',
+    phone: '90000000', email: 'scout@example.com', sl: '李樹明', gsl: '黃志明',
+    dateJoined: '2024-09-01', dateInvestiture: '2024-11-25',
   });
-  book.otherBadges['SC-INT-001'] = { date: '2025-03-15', cert: 'INT/2025/0181', confirmedByBadge: true };
-  book.otherBadges['SC-PUR-001'] = { date: '2025-05-10', cert: 'PUR/2025/0244' };
-  book.pages.award_L1 = { date: '2024-11-25', certNo: 'MB/2024/0912', presentedBy: '李樹明' };
+  const dates = { L1: '2024-10-12', L2: '2025-03-01', L3: '2025-08-01', L4: '2026-03-01', L5: '2026-10-01' };
+  for (const award of ALL_TRACKED_AWARDS) {
+    for (const segment of award.segments) for (const item of segment.items) {
+      book.progress[item.id] = { date: dates[award.id] || '2026-02-01', assessor: '李樹明' };
+    }
+  }
+  book.progress['L1-M1'].date = '2024-09-14';
+  for (const id of ['L1', 'L2', 'L3', 'L4']) {
+    book.pages[`award_${id}`] = { date: dates[id], certNo: `DEMO-${id}`, presentedBy: '李樹明' };
+  }
+  for (const id of ['L2', 'L3', 'L4', 'L5']) {
+    book.pages[`elective_${id}`] = { outdoor: 'outdoor', community: 'community' };
+  }
+  book.pages.p42 = { leadership: { courseCode: 'DEMO-LTC', date: '2026-02-01', certNo: 'DEMO-LTC-001' } };
+  for (const [i, badge] of OTHER_BADGES.entries()) {
+    book.otherBadges[badge.id] = { date: '2025-06-01', cert: `DEMO-${String(i + 1).padStart(3, '0')}` };
+  }
   book.renewals = [{ date: '2026-09-01', validUntil: '2027-08-31', memberNo: '0012345678', leaderName: '李樹明' }];
+  const cBadges = [
+    '與戶外活動有關之專科徽章 ／ 艇工章 ／ 初級航空活動章',
+    '指定兩個技能組專科徽章或水手章 及 一個海上活動有關之專科徽章或中級航空活動章',
+    '與藝術／創意／科技有關之專科徽章', '指定服務組專科徽章',
+    '與體適能有關之專科徽章', '教導組專科徽章', '與生態環境有關之專科徽章',
+  ];
+  book.forms.pt18 = {
+    ...Object.fromEntries(cBadges.map((name) => [`sectionC_${name}`, '2026-02-01'])),
+    sectionD_E2: '2026-02-01', applicantDate: '2026-10-02',
+    nominationName: '李樹明', nominationDate: '2026-10-03',
+    recommendationName: '陳志明', recommendationDate: '2026-10-04',
+    confirmationName: '黃志明', confirmationDate: '2026-10-05',
+    approvalName: '林志明', approvalDate: '2026-10-06',
+    receivedDate: '2026-10-07', certIssueDate: '2026-10-08',
+  };
+  book.forms.p120a1 = {
+    refNo: 'DEMO-A1', badgeId: 'SC-INT-001', arrangement: 'course',
+    arrangementName: '示範訓練班', arrangementOrg: '示範機構', slName: '李樹明', slDate: '2025-05-01',
+    examinerName: '陳志明', examinerPhone: '90000001', examinerQualification: '示範資歷',
+    examinerCertName: '示範證書', examinerCertNo: 'DEMO-EXAM-001', assessmentMode: '實習及口試',
+    assessmentDate: '2025-06-01', assessmentPlan: '示範考驗計劃', accepted: 'accepted',
+    authorisedName: '黃志明', authorisedPost: '示範職位', authorisedDate: '2025-05-10',
+    result: 'pass', examinerRemarks: '示範評語', resultDate: '2025-06-01',
+    issueName: '林志明', issuePost: '示範職位', issueDate: '2025-06-02', issueCertNo: 'DEMO-CERT-001',
+  };
+  book.forms.p120a2 = { refNo: 'DEMO-A2', mainBadgeId: 'SC-INT-001',
+    extraBadges: [{ badgeId: 'SC-PUR-001', applicantName: '陳小鷹', scoutId: '0012345678' }],
+    additionalNotes: '示範資料，只供列印測試。' };
   return book;
 }
