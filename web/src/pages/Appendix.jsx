@@ -276,8 +276,8 @@ function AppendixHowto() {
       <Note en="Copyright and disclaimer appear in exactly three places: the cover, this appendix and the About menu — never on every page.">
         版權及免責聲明只出現於三處：封面底部、數位附錄及選單「關於」，不會每頁重複。
       </Note>
-      <P en="This book follows the paper Scout Record Book: pages 1–5 personal particulars, pages 102–110 Chief Scout's Award record (per the PT/18 checklist). Use the print checklist for photocopy sets.">
-        本冊對應紙本《童軍紀錄冊》：第 1–5 頁個人摘要及旅團資料、第 102–110 頁總領袖獎章考驗紀錄（按 PT/18 查閱清單編列）。遞交申請時請用「列印檢查清單」核對所需副本。
+      <P en="This book follows the paper Scout Record Book: pages 1–5 contain personal and group records, and pages 60–75 cover the Chief Scout's Award. Check the current PT/18 requirements and the relevant edition before submitting copies.">
+        本冊對應紙本《童軍紀錄冊》：第 1–5 頁為個人及旅團紀錄，第 60–75 頁為總領袖獎章。遞交副本前請核對現行 PT/18 要求及所用紀錄冊版本。
       </P>
       <div className="pgbtns no-print">
         <Link to="/forms" className="btn btn--ghost btn--sm">

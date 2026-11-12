@@ -2407,7 +2407,7 @@ textarea.write__input { min-height: calc(var(--rows, 2) * 24px - 4px); line-heig
 .ptnotes, .ptfollow { font-size: 11px; color: #333; line-height: 1.5; }
 .ptblank { min-height: 22px; border-bottom: 1px solid #999; }
 
-/* 整本 19 頁列印檢視 */
+/* 整本列印檢視 */
 .printall { display: flex; flex-direction: column; gap: 18px; }
 .printall__bar {
   display: flex;
@@ -4634,3 +4634,6 @@ html[data-print-preview] .write--multi.is-empty {
   .otrow__sig { justify-self: start; }
   .assrow__pen { width: 24px; height: 24px; opacity: 0.8; }
 }
+
+/* 示範資料印在每張表格，避免誤作正式申請。 */
+.demo-notice { border: 2px solid #333; color: #111; font-weight: 700; text-align: center; padding: 3px; margin-bottom: 5px; font-size: 12px; }

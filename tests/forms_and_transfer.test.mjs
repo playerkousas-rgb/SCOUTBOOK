@@ -86,7 +86,10 @@ test('紀錄冊資料一次填寫即自動帶入 PT/18・P120A1，缺漏欄位�
   assert.deepEqual(r.missing, []);
 
   // P120A1 未選報考徽章時如實回報，而不是假裝齊備
-  const rA1 = formReadiness(demo, 'p120a1', REF);
+  assert.equal(formReadiness(demo, 'p120a1', REF).ready, true);
+  const noBadge = structuredClone(demo);
+  noBadge.forms.p120a1.badgeId = '';
+  const rA1 = formReadiness(noBadge, 'p120a1', REF);
   assert.equal(rA1.ready, false);
   assert.ok(rA1.missing.includes('報考徽章（請先選擇）'));
 
@@ -113,7 +116,7 @@ test('紀錄冊資料一次填寫即自動帶入 PT/18・P120A1，缺漏欄位�
 
   const acts = activityBadgeRows(demo);
   assert.equal(acts.length, OTHER_BADGES.length);
-  assert.equal(acts.find((b) => b.id === 'SC-PUR-001').date, '2025-05-10');
+  assert.equal(acts.find((b) => b.id === 'SC-PUR-001').date, '2025-06-01');
 });
 
 test('QR 預設全不剔選（私隱自決），空格包不含任何個人資料', () => {
@@ -255,4 +258,22 @@ test('列印版面與版面契約：A4 表單、110 頁列印、目錄及附錄�
   assert.ok(css.includes('html[data-print-preview]'));
   // 手機不得出現水平捲軸
   assert.ok(css.includes('max-width: 740px'));
+});
+
+
+test('總領袖示範樣本可列印所需資料，並保留明確的虛構標記', () => {
+  const demo = demoBook();
+  const pt = buildFormValues(demo, 'pt18', REF);
+  assert.equal(demo.meta.demo, true);
+  assert.equal(formReadiness(demo, 'pt18').ready, true);
+  assert.ok(pt.electives.every((row) => row.outdoor && row.community && row.completedDate && row.outdoorDate && row.awardDate));
+  assert.ok(pt.sectionC.every((row) => row.date));
+  assert.ok(pt.sectionD.flatMap((group) => group.rows).filter((row) => row.id).every((row) => row.date));
+  assert.ok(pt.sectionD_E2);
+  assert.ok(pt.leadership.courseCode);
+  assert.ok(pt.nominationName && pt.nominationDate);
+  assert.equal(demo.holderSignature, null);
+  assert.ok(Object.values(demo.progress).every((row) => !row.confirmedByBadge && !row.signature));
+  assert.ok(buildFormValues(demo, 'p120a1').badgeId);
+  assert.ok(buildFormValues(demo, 'p120a2').extraBadges.length);
 });

@@ -7,7 +7,7 @@
  *   3. 前台收到 SKIP_WAITING 後才接管；activate 清走所有舊 cache 並 clients.claim()。
  */
 
-const CACHE_NAME = 'scoutbook-cache-v4';
+const CACHE_NAME = 'scoutbook-cache-v6';
 const SHELL = [
   '/',
   '/index.html',

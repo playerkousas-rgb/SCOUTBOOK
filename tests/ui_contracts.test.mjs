@@ -388,7 +388,7 @@ test('G11 圖標：9 個 PNG／ICO、尺寸正確、無 SVG、體積合格、HTM
   }
 
   const sw = read('web/public/sw.js');
-  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v4'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'scoutbook-cache-v6'"));
   assert.ok(!sw.includes('cubbook') && !sw.includes('vsbook'));
   // 預快取清單每一項都必須真實存在，否則離線首次載入會破圖
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];
@@ -527,4 +527,17 @@ test('附錄含卷首語／制服／總覽／說明，舊頁面模組已刪除',
     assert.ok(appendix.includes(key), `附錄缺少 ${key}`);
   }
   assert.ok(!appendix.includes('第 50–62 頁'), '附錄仍有舊頁碼文字');
+});
+
+test('目錄及列印文案與官方頁序一致', async () => {
+  const { PRINT_CHECKLIST } = await import('../shared/forms.js');
+  const paper = read('web/src/components/Paper.jsx');
+  const menu = read('web/src/components/MenuDialog.jsx');
+  const appendix = read('web/src/pages/Appendix.jsx');
+  assert.match(paper, /\$\{PAGE_TOTAL\}/);
+  assert.match(menu, /\$\{PAGE_TOTAL\}/);
+  assert.doesNotMatch(paper + menu, /(?:19|66) (?:printed )?pages|(?:19|66) 頁/);
+  assert.match(appendix, /第 60–75 頁為總領袖獎章/);
+  assert.equal(PRINT_CHECKLIST.find((g) => g.title === '總領袖獎章考驗紀錄').digital, '第 60–75 頁');
+  assert.equal(PRINT_CHECKLIST.find((g) => g.title === '專科徽章證書').digital, '第 78–82、104–105 頁');
 });

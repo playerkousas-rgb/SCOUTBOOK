@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useBook } from '../bookContext.js';
 import { useToast, Icon, Modal } from '../ui.jsx';
 import { download, clearBook, slugify } from '../bookStore.js';
-import { APP_VERSION, demoBook, newBook, today } from '@shared/book.js';
+import { APP_VERSION, PAGE_TOTAL, demoBook, newBook, today } from '@shared/book.js';
 import { isBadgeProgressFile, isBookBackupFile } from '../scoutbadgeBridge.js';
 import { LegalNote } from './Legal.jsx';
 import { navigate } from '../router.jsx';
@@ -199,8 +199,8 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
             <strong>{isEn ? 'Print whole book / Save PDF' : '列印整本 / 儲存 PDF'}</strong>
             <em>
               {isEn
-                ? '66 pages, one per record-book page; A4 portrait with the official page mapping in the print checklist.'
-                : '66 頁一次過，每頁對應紙本一節；A4 直向，頁碼及紙本對照見列印檢查清單。'}
+                ? `${PAGE_TOTAL} numbered book pages; A4 portrait. Contents and digital appendix are not included. See the print checklist for page references.`
+                : `一次列印 ${PAGE_TOTAL} 頁編號內頁，不含目錄及數位附錄；A4 直向，頁碼參考見列印檢查清單。`}
             </em>
           </span>
         </button>
@@ -264,7 +264,7 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
             type="button"
             className="menu__item"
             onClick={() => {
-              if (!window.confirm(isEn ? 'Load demo book and overwrite current content?' : '載入示範紀錄冊會覆蓋目前內容，確定嗎？')) return;
+              if (!window.confirm(isEn ? 'Load fictional Chief Scout application demo data and overwrite current content? Back up first. Do not submit the sample.' : '載入虛構的總領袖申請示範資料會覆蓋目前內容，請先備份；樣本不可遞交。確定嗎？')) return;
               replace(demoBook());
               push(isEn ? 'Demo record book loaded' : '已載入示範紀錄冊');
               navigate('/p/contents');
@@ -274,7 +274,7 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
             <Icon name="book" size={18} />
             <span>
               <strong>{isEn ? 'Load Demo Record Book' : '載入示範紀錄冊'}</strong>
-              <em>{isEn ? 'Explore all features with sample Scout records' : '以陳小鷹的示範資料試玩所有功能'}</em>
+              <em>{isEn ? 'Fictional Chief Scout application and form print test data; not for submission' : '載入虛構的總領袖申請及表格列印測試資料，不可遞交'}</em>
             </span>
           </button>
         )}
