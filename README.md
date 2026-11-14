@@ -2,13 +2,13 @@
 
 > **童軍支部個人隨身離線電子紀錄冊** —— 逐頁對應香港童軍總會《童軍紀錄冊》及 2026 年修訂版《童軍訓練綱要》，支援就地打字／手寫簽名、一鍵生成及列印 `PT/18`・`P120A1`・`P120A2` 官方表格、成員⇄領袖純離線二維碼核簽，以及與 `scoutbadge` 旅團進度表的**純進度、零個人資料**雙向同步。
 
-- **目前版本**：`v2.1.3`（紙本官方 110 頁逐頁對應：個人／獎章／紀錄／AYP／附錄全功能；本版起 scoutbadge 進度檔必須先連接並登入 scoutbadge 才可匯出或匯入，連接表單自動讀取已登記旅團；測試 70/70；見 [CHANGELOG.md](CHANGELOG.md)）
+- **目前版本**：`v2.1.4`（2026-11-14；容許「服務平台」以 iframe 嵌入，見下文「嵌入服務平台」；見 [CHANGELOG.md](CHANGELOG.md)）
 - **架構形態**：離線優先 PWA（React + Vite + Service Worker，`localStorage` 本機儲存，零帳號、零雲端上傳；可選配 Vercel `/api/leader` 與 `/api/scoutbadge` 伺服器端接口）
 - **設計主題**：對齊 `CUBSBOOK` `v1.0.2`／`VSBOOK` `v1.0.0`／`ROVERBOOK` `v16` 的介面、安全區與版權規範，改用**童軍綠布面**封面（`#143b28 → #08180f` × 燙金 `#e3c07a`／`#f6e6bb` × 象牙內頁 `#f7f2e7`）；重點按鈕及進度條同樣用童軍綠。金字只准配深綠（10.06:1），金底按鈕一律深炭字（10.67:1）；手寫墨及蓋印一律深童軍綠，會員章／總領袖獎章／制服圖版用官方裁圖（`web/public/official/`）並保留原印顏色，確保 WCAG AA（見 [`docs/design-review.md`](docs/design-review.md)）。
 - **一句話**：BOOK 是「這一位成員」的口袋紀錄冊；全團名冊、批量簽核、多成員切換一律留在 `scoutbadge`。
 - **獨立優先**：BOOK **不接 scoutbadge 亦 100% 可用** —— 逐頁填寫、簽名、官方表格、A4 列印、離線二維碼、JSON 備份全部在本機完成。`scoutbadge` 只是「可選」的免重打同步；純靜態主機（無 `/api`）會自動顯示「獨立模式」，紀錄冊本身的功能一項不少。唯一需要連線的是 **scoutbadge 進度檔**的匯出／匯入：必須先在「數位附錄」連接並登入 scoutbadge（完整紀錄冊備份與還原不受影響）。
 
-> 目前狀態：`v2.1.3`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
+> 目前狀態：`v2.1.4`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
 
 ---
 
@@ -75,6 +75,30 @@ node scripts/preflight_v1.0.mjs .
    - 只接受 `https`，而且只取 origin；留空或填錯即自動使用預設值。如有自建網址可改；個別旅團另可用 `TROOP_<id>_NAME`／`_EN`／`_BACKEND`／`_APIKEY` 直連自己的後端，見 [`.env.example`](.env.example)。
    - `scoutbadge` 的旅團清單要待其管理員登記旅團並重新部署後才會更新，回應另設邊緣快取（`s-maxage=3600`）；新登記的旅團未必即時出現在 BOOK 的選單，可稍後按「重新讀取旅團清單」再試。
 
+### 嵌入「服務平台」（iframe）
+
+全站回應以下安全標頭（`vercel.json`），**只容許 BOOK 自身及服務平台嵌入**；`X-Frame-Options` 已移除，亦不得改設 `SAMEORIGIN`（兩者都會擋住跨網站嵌入）：
+
+```
+Content-Security-Policy: frame-ancestors 'self' https://member-portal-sigma-swart.vercel.app
+```
+
+服務平台一方的嵌入寫法（相機掃描及「複製代碼」須由平台委派權限）：
+
+```html
+<iframe src="https://scoutbook-five.vercel.app/" allow="camera; clipboard-write"></iframe>
+```
+
+| 項目 | 平台內（iframe） | 獨立版 |
+| :--- | :--- | :--- |
+| 相機掃描 | 可用，但 `<iframe>` 必須帶 `allow="camera"`；平台自身的 `Permissions-Policy` 不可把 `camera` 設為 `()` | 不變 |
+| 本機儲存 | 與獨立版**分開儲存**（瀏覽器按頂層網站分割），舊資料不會自動出現；Safari／iPhone／iPad 關閉瀏覽器後可能清除 | 不變 |
+| 備份／還原 | 可用：歡迎頁「匯入備份」、提示條及選單「匯出備份」 | 不變 |
+| 離線 | 該裝置在平台內連網開啟一次後才有快取，而且只有平台頁面仍然開著（或平台自身支援離線）時才用得上 | 不變 |
+| 加到主畫面 | 不適用；選單改為「開啟獨立版（新分頁）」 | 不變 |
+
+**把獨立版的舊資料搬入平台**：在獨立版開啟選單 →「匯出備份」下載 JSON → 在服務平台內開啟 SCOUTBOOK → 歡迎頁按「匯入備份」選取該檔案。反方向相同。平台如使用 `sandbox`，須列出 `allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads`。決策背景見 [`docs/adr/0004-portal-iframe-embedding.md`](docs/adr/0004-portal-iframe-embedding.md)。
+
 ### 正式網址與圖標更新
 
 - **本 app 正式網址**：`https://scoutbook-five.vercel.app/`（`index.html` 的 `canonical`、`og:url`、`og:image` 三者必須同源，測試會檢查）。
@@ -116,7 +140,7 @@ node scripts/preflight_v1.0.mjs .
 | [docs/design-review.md](docs/design-review.md) | 視覺基準與巡檢紀錄 |
 | [docs/column-layout-check.png](docs/column-layout-check.png) | v2.1.0 欄寬規格示意圖（量度結果 ＋ 各寬度實際 px，由 `scripts/render_column_spec.py` 產生） |
 | [docs/p1-research.md](docs/p1-research.md) | P1 研發前調查（相近產品、自己方案、未核實項） |
-| [docs/adr/README.md](docs/adr/README.md) | 架構決策紀錄（0001 技術棧、0002 二維碼與版權、0003 scoutbadge 進度檔須先連接） |
+| [docs/adr/README.md](docs/adr/README.md) | 架構決策紀錄（0001 技術棧、0002 二維碼與版權、0003 scoutbadge 進度檔須先連接、0004 服務平台 iframe 嵌入白名單） |
 | [docs/out-of-scope/README.md](docs/out-of-scope/README.md) | 明確不做事項 |
 | [scripts/README.md](scripts/README.md) | 守衛與產生器腳本說明 |
 

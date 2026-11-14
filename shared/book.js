@@ -47,7 +47,7 @@ export {
   officialPageByNo,
 };
 
-export const APP_VERSION = 'v2.1.3';
+export const APP_VERSION = 'v2.1.4';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 

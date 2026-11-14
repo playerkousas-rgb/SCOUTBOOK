@@ -2,12 +2,12 @@
  *
  * 自動更新三件事（換版本時必須同步）：
  *   1. CACHE_NAME 的版本尾碼每次發版都要遞增；只改程式不改快取名，已安裝的 APP 永遠收舊版面。
- *      （現行版號 = scoutbook-cache-v4，必須與 package.json／APP_VERSION／index.html meta 同步遞增。）
+ *      （現行版號 = scoutbook-cache-v7，必須與 package.json／APP_VERSION／index.html meta 同步遞增。）
  *   2. install 時不自動 skipWaiting，新版先停在 waiting，由前台彈「立即更新」給用戶決定。
  *   3. 前台收到 SKIP_WAITING 後才接管；activate 清走所有舊 cache 並 clients.claim()。
  */
 
-const CACHE_NAME = 'scoutbook-cache-v6';
+const CACHE_NAME = 'scoutbook-cache-v7';
 const SHELL = [
   '/',
   '/index.html',

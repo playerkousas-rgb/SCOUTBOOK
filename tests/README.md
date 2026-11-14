@@ -19,6 +19,7 @@ npm test
 | `ui_contracts.test.mjs` | 66 頁路由、版權三處、童軍綠金 WCAG AA、領袖密碼伺服器比對、領袖／普通模式分離、中英分離、圖示＋manifest＋SW、同步卡樣式類別一一對應與列印隱藏、`<Icon>` 名稱必須存在、Toast 版面、套件配置 |
 | `layout_and_update.test.mjs` | 欄寬量度數字、名稱欄寫法（禁 `minmax(0, 1fr)`）、日期欄 ≥104px、表頭＝表身欄寬、兩行制位置、簽名圖限寬、禁 container query、四處版本號同步、更新協定 |
 | `sw_update_flow.test.mjs` | 以 vm 假物真跑 SW 生命週期與前台更新協定（install 不自動接管、SKIP_WAITING、舊 cache 清理、切回前景查更新、controllerchange 只重載一次） |
+| `embed_contract.test.mjs` | 服務平台 iframe 嵌入契約：`frame-ancestors` 白名單精確值、`X-Frame-Options`／`SAMEORIGIN` 不得重現、相機權限保留、嵌入偵測、備份／還原文案、反嵌入跳轉禁止、文件同步 |
 
 另有一支非測試框架的版面核算指令：
 

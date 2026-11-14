@@ -5,6 +5,7 @@ import { persistBook } from '../bookStore.js';
 import { isBadgeProgressFile, isBookBackupFile } from '../scoutbadgeBridge.js';
 import { navigate } from '../router.jsx';
 import { useLang } from '../i18n.jsx';
+import { EmbedWelcomeNote } from '../components/EmbedNotice.jsx';
 
 export default function Welcome({ onReady, onLeader }) {
   const { push } = useToast();
@@ -119,6 +120,8 @@ export default function Welcome({ onReady, onLeader }) {
             ? 'No account, no login, no scoutbadge required. Your entire record book stays on this device — start completely blank and fill in particulars later if you prefer.'
             : '不需要帳號、不需要登入，也不需要連接 scoutbadge。整本冊子存在你這部裝置；逐頁點擊就可以填寫，也可完全空白開始，日後才補個人資料。'}
         </p>
+
+        <EmbedWelcomeNote />
 
         <form className="welcome__form" onSubmit={create}>
           <div className="welcome__row">

@@ -5,6 +5,8 @@ import { download, clearBook, slugify } from '../bookStore.js';
 import { APP_VERSION, PAGE_TOTAL, demoBook, newBook, today } from '@shared/book.js';
 import { isBadgeProgressFile, isBookBackupFile } from '../scoutbadgeBridge.js';
 import { LegalNote } from './Legal.jsx';
+import { StandaloneLink } from './EmbedNotice.jsx';
+import { isEmbedded } from '@shared/embed.js';
 import { navigate } from '../router.jsx';
 import { useLang } from '../i18n.jsx';
 import { exitLeaderMode } from '../leader.js';
@@ -18,6 +20,8 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
   const [showHome, setShowHome] = useState(false);
 
   if (!open) return null;
+
+  const embedded = isEmbedded();
 
   const backup = () => {
     download(`scoutbook-${slugify(book.member?.nameZh || book.member?.nameEn)}-${today()}.json`, book);
@@ -56,19 +60,33 @@ export default function MenuDialog({ open, onClose, onShowQr, leader = false, le
   return (
     <Modal onClose={onClose} eyebrow="MENU" title={isEn ? 'Record Book Options' : '紀錄冊選項'}>
       <div className="menu">
-        <button type="button" className="menu__item menu__item--accent" onClick={() => setShowHome((v) => !v)}>
-          <Icon name={showHome ? 'down' : 'download'} size={18} />
-          <span>
-            <strong>{isEn ? 'Add to home screen' : '加到手機主畫面'}</strong>
-            <em>
-              {isEn
-                ? 'One tap to open; no certificate, no fee, no server.'
-                : '一按即開，毋須憑證、毋須付費、毋須伺服器'}
-            </em>
-          </span>
-        </button>
+        {embedded ? (
+          <StandaloneLink className="menu__item menu__item--accent">
+            <Icon name="external" size={18} />
+            <span>
+              <strong>{isEn ? 'Open standalone site (new tab)' : '開啟獨立版（新分頁）'}</strong>
+              <em>
+                {isEn
+                  ? 'Inside the Service Portal this book is stored separately. To add it to your home screen or keep long-term records, use the standalone site and move data with Export / Import Backup.'
+                  : '服務平台內的紀錄冊與獨立版分開儲存；要加到主畫面或長期保存，請使用獨立版，並以「匯出備份／匯入備份」搬移資料'}
+              </em>
+            </span>
+          </StandaloneLink>
+        ) : (
+          <button type="button" className="menu__item menu__item--accent" onClick={() => setShowHome((v) => !v)}>
+            <Icon name={showHome ? 'down' : 'download'} size={18} />
+            <span>
+              <strong>{isEn ? 'Add to home screen' : '加到手機主畫面'}</strong>
+              <em>
+                {isEn
+                  ? 'One tap to open; no certificate, no fee, no server.'
+                  : '一按即開，毋須憑證、毋須付費、毋須伺服器'}
+              </em>
+            </span>
+          </button>
+        )}
 
-        {showHome && (
+        {!embedded && showHome && (
           <div className="menuguide">
             {isEn ? (
               <ol>
