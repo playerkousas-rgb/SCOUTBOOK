@@ -10,6 +10,7 @@ import { Crest, Icon, ToastProvider, cx, useToast } from './ui.jsx';
 import { IndexSheet, Pager } from './components/Paper.jsx';
 import ShowQrDialog from './components/ShowQrDialog.jsx';
 import MenuDialog from './components/MenuDialog.jsx';
+import { EmbedRibbon } from './components/EmbedNotice.jsx';
 import LeaderGate from './components/LeaderGate.jsx';
 import Welcome from './pages/Welcome.jsx';
 import CoverPage from './pages/CoverPage.jsx';
@@ -238,6 +239,8 @@ function BookApp({ book, saveIssue, leader, leaderReady }) {
           </button>
         </div>
       </header>
+
+      {!printAll && !scanPath && !leaderRoute && <EmbedRibbon book={book} canBackup={!leader} />}
 
       {leader && section && (
         <div className="readonlybar no-print" role="status">
