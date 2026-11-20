@@ -8,11 +8,12 @@
 - **API 代理層（`api/scoutbadge.js`）**：`action === 'load'` 改為**並行**呼叫上游 `load` 與 `getServiceRecords`；新增 `filterPersonalServiceRecords()`，只保留 `id`／`activity`／`date`／`hours`／`place` 五個欄位，剔除 `status === 'rejected'`、`detail`、`note` 及任何個人資料，附在 `load` 回應的 `serviceRecords`。服務紀錄讀取失敗（網絡錯誤、逾時、非 JSON、上游 `success: false`）一律**安全降級為 `[]`**，進度同步照常成功。
 - **前端匯入（`shared/book.js` `importFromBadge`）**：讀取 `json.serviceRecords`，寫入第 109／110 頁「服務紀錄」表（日期・主辦單位・摘要・服務時數）；以 `badgeRecordId` 及「日期｜摘要」去重，空白列優先填寫並保留原有 row id，**本機手寫紀錄永不覆蓋**；第 109 頁滿 8 行後改用第 110 頁。回傳新增 `importedServices`。
 - **同步提示**：數位附錄同步卡（即時同步及進度檔匯入）的提示訊息會顯示已錄入的服務紀錄筆數（例如「及 2 筆服務紀錄」／`and 2 service records`）。
+- **只讀標示（BOOK 是「看」的）**：由 scoutbadge 同步的服務列在表內以淡綠底＋左側綠線標示，附「scoutbadge · 已核實，只供參閱」提示，第 109／110 頁加註說明：BOOK 永遠不會把服務紀錄回寫 scoutbadge，要新增或更正須由領袖在 scoutbadge 內處理並按 CONFIRM。標示只改背景及 `box-shadow`，不動任何欄寬（表頭與表身照舊對齊）。
 - **對接文件**：[`docs/partner-scoutbadge.md`](docs/partner-scoutbadge.md) 新增 §2.5 `getServiceRecords` 契約（穩定 `id`、ISO 日期、`status: rejected` 不匯入、失敗降級），並在 §4 驗收表補上第 7–8 項。
 
 ### 測試（Tests）
 
-- `tests/scoutbadge_sync.test.mjs` 新增 4 項：`filterPersonalServiceRecords` 清洗（剔除 rejected／個人資料、非 ISO 日期保留但留空）；`load` 同步呼叫 `getServiceRecords` 並帶 `target_ymis`，三種失敗情境均降級為 `[]` 而進度照常；`importFromBadge` 以 `badgeRecordId` 及「日期｜摘要」去重、不覆蓋手寫紀錄、空白列優先；第 109 頁滿行後寫入第 110 頁。
+- `tests/scoutbadge_sync.test.mjs` 新增 5 項：`filterPersonalServiceRecords` 清洗（剔除 rejected／個人資料、非 ISO 日期保留但留空）；`load` 同步呼叫 `getServiceRecords` 並帶 `target_ymis`，三種失敗情境均降級為 `[]` 而進度照常；`importFromBadge` 以 `badgeRecordId` 及「日期｜摘要」去重、不覆蓋手寫紀錄、空白列優先；第 109 頁滿行後寫入第 110 頁；`BOOK 只讀 BADGE` 一項鎖死方向——服務紀錄不會變成已核實進度或待批申報、`exportForBadge` 不含任何服務紀錄、瀏覽器直接呼叫 `getServiceRecords`／`save`／`saveOtherBadge`／`saveServiceRecord`／`reviewRequest`／`approveRequest`／`rejectRequest` 一律 403 且不轉發上游。
 - Service Worker 快取升至 `scoutbook-cache-v8`。
 
 ## [v2.1.4] — 2026-11-14

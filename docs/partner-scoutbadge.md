@@ -143,6 +143,20 @@ Content-Type: application/json
 - 讀取失敗（未登入、逾時、5xx、非 JSON）時 BOOK **安全降級**為「沒有服務紀錄」，
   進度同步照常完成，不會顯示錯誤。
 
+**方向與核實邊界（不可退讓）**
+
+| 方向 | 內容 | BOOK 的行為 |
+| --- | --- | --- |
+| BADGE → BOOK | 已核實服務紀錄 | 只**參閱**：寫入第 109／110 頁，綠底標示「scoutbadge · 已核實」；BOOK 不回寫 |
+| BOOK → BADGE | 成員自填進度 | 只經 `requestComplete` 送交，`status: 'pending'`；領袖在 scoutbadge 按 CONFIRM 才寫入 |
+
+- BOOK **沒有**任何寫入服務紀錄的動作；`getServiceRecords`、`save`、`saveOtherBadge`、
+  `reviewRequest`、`approveRequest`、`rejectRequest` 由瀏覽器呼叫一律 `403`，且不會轉發上游。
+- BOOK 送出的申報檔（`exportForBadge`）只含 `progress` / `otherBadges` 的待核實項目；
+  服務紀錄（第 109／110 頁）**永不**出現在申報檔內，因此不可能繞過領袖核實。
+- 成員若在本機修改了已同步的服務列，改動只留在本機，不會回寫；正式紀錄仍以 scoutbadge
+  內領袖核實的版本為準。
+
 ### 2.4 `requestComplete` 必須冪等
 
 露營現場訊號差，BOOK 會**重試同一批**（最多 200 項／批，30 秒 timeout）。請以

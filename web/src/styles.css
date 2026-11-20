@@ -1064,6 +1064,12 @@ textarea.write__input { min-height: calc(var(--rows, 2) * 24px - 4px); line-heig
   min-width: 0;
 }
 .pgtable__row:last-of-type { border-bottom: 0; }
+/* 由 scoutbadge 同步、領袖已核實的列：淡綠底＋左側綠線，純識別用。
+   以 box-shadow 畫線，不改 padding／欄寬，表頭與表身永遠對齊。 */
+.pgtable__row.is-badge-verified {
+  background: rgba(28, 82, 54, 0.055);
+  box-shadow: inset 3px 0 0 0 rgba(28, 82, 54, 0.45);
+}
 .pgtable__row > span {
   min-width: 0;
   padding: 4px 7px;

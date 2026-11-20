@@ -718,6 +718,75 @@ test('importFromBadge：第 109 頁滿行後服務紀錄寫入第 110 頁', () =
   });
 });
 
+test('BOOK 只讀 BADGE：服務紀錄永不回寫、申報一律 pending、原始服務紀錄不可直讀', async () => {
+  const book = newBook({ member: { scoutId: '0012345678' } });
+  const res = importFromBadge(
+    {
+      success: true,
+      progress: { '0012345678': {} },
+      serviceRecords: [
+        { id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', hours: 3, place: '旺角' },
+      ],
+    },
+    book,
+    { expectedScoutId: '0012345678' },
+  );
+  assert.equal(res.importedServices, 1);
+
+  // 服務紀錄只是本冊的參閱資料：不會變成已核實進度、活動徽章或待批申報
+  assert.deepEqual(res.book.progress, {});
+  assert.deepEqual(res.book.otherBadges, {});
+  assert.equal(collectPendingForBadge(res.book).length, 0);
+
+  // 成員在本機自填一項進度後匯出：只有該項，而且一律 pending、confirmed: false
+  res.book.progress['L2-A1'] = { date: '2026-10-05' };
+  const out = exportForBadge(res.book, 'T12');
+  assert.equal(out.status, 'pending');
+  assert.equal(out.confirmed, false);
+  assert.deepEqual(out.pendingRequests.map((r) => r.item_id), ['L2-A1']);
+  assert.deepEqual(out.pendingRequests.map((r) => r.status), ['pending']);
+  assert.deepEqual(out.pendingRequests.map((r) => r.confirmed), [false]);
+  const payload = JSON.stringify(out);
+  for (const leak of ['賣旗日服務', 'SRV_1', '旺角', 'p109', 'badgeRecordId']) {
+    assert.equal(payload.includes(leak), false, `匯出到 BADGE 的申報檔不應含服務紀錄：${leak}`);
+  }
+
+  // 即使持有 token，瀏覽器也不可直讀上游原始服務紀錄（含姓名等個人資料），
+  // 亦不可自行寫入任何進度：一律 403，且被拒絕的動作永不轉發上游。
+  const stub = stubFetch(() =>
+    okJson({
+      success: true,
+      records: [{ id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', status: 'approved', name: '陳小鷹' }],
+    }),
+  );
+  try {
+    for (const action of [
+      'getServiceRecords',
+      'save',
+      'saveOtherBadge',
+      'saveServiceRecord',
+      'reviewRequest',
+      'approveRequest',
+      'rejectRequest',
+    ]) {
+      const r = await callApi('POST', {
+        action,
+        troopId: 'T12',
+        data: {
+          token: 'tok-abc-123',
+          ymis: '0012345678',
+          records: [{ id: 'SRV_9', activity: '自行寫入', date: '2026-10-11', status: 'approved' }],
+        },
+      });
+      assert.equal(r.status, 403, `${action} 必須 403`);
+      assert.equal(r.body.success, false);
+    }
+    assert.equal(stub.calls.length, 0, '被拒絕的動作不得轉發 scoutbadge');
+  } finally {
+    stub.restore();
+  }
+});
+
 test('BOOK ⇄ BADGE 端到端：空白冊同步、只匯入已核實、申報永不自我核實', () => {
   const blank = newBook();
   const payload = {
