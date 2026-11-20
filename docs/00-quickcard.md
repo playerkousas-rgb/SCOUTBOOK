@@ -34,5 +34,6 @@ node scripts/preflight_v1.0.mjs .                  # 開局與交付總閘門
 3. **表格列印出現頁首網址或邊界裁切**：列印對話框選 `A4`、邊界「預設／無」、勾選「背景圖形」、取消「頁首及頁尾」。
 4. **同步顯示「尚未登入 scoutbadge」**：在數位附錄重新輸入 SCOUT ID 與 `scoutbadge` 密碼；BOOK 不會儲存密碼，只保存登入 token 於本次工作階段。
 5. **輸入 SCOUT ID 後拉不到進度**：確認該旅團已在伺服器設定 `SCOUTBADGE_ORIGIN` 或 `TROOP_<id>_*`，且成員在 `scoutbadge` 內的角色可讀取自己的進度；`pendingRequests` 不會出現在紀錄冊。
-6. **在服務平台內看不到原有紀錄冊**：平台內（iframe）與獨立版分開儲存。到獨立版開啟選單 →「匯出備份」，再在平台內歡迎頁按「匯入備份」。iPhone／iPad 及 Safari 可能在關閉瀏覽器後清除平台內的資料，每次填寫後請匯出備份。
-7. **在服務平台內開不到相機**：檢查平台的 `<iframe>` 是否帶 `allow="camera"`，以及平台自身的 `Permissions-Policy` 有否禁用 `camera`；未修正前可用掃描頁的「貼上代碼」或開啟獨立版。
+6. **同步後看不到服務紀錄**：服務紀錄不在 `load` 回應內，BOOK 會另外呼叫 `getServiceRecords` 並寫入第 109／110 頁。若該筆紀錄在 `scoutbadge` 內是「已拒絕」（`status: rejected`）或日期不是 `YYYY-MM-DD`（日期會留空但仍保留活動及時數），請先在 `scoutbadge` 修正；上游讀取失敗時同步只會缺少服務紀錄，進度照常更新。
+7. **在服務平台內看不到原有紀錄冊**：平台內（iframe）與獨立版分開儲存。到獨立版開啟選單 →「匯出備份」，再在平台內歡迎頁按「匯入備份」。iPhone／iPad 及 Safari 可能在關閉瀏覽器後清除平台內的資料，每次填寫後請匯出備份。
+8. **在服務平台內開不到相機**：檢查平台的 `<iframe>` 是否帶 `allow="camera"`，以及平台自身的 `Permissions-Policy` 有否禁用 `camera`；未修正前可用掃描頁的「貼上代碼」或開啟獨立版。

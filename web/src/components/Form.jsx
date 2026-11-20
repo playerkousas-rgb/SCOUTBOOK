@@ -342,6 +342,13 @@ export function columnTemplate(cols, { del = false } = {}) {
   return tracks.join(' ');
 }
 
+/**
+ * 由 scoutbadge 同步、領袖已核實的列（服務紀錄帶 `badgeRecordId`，其餘帶 `confirmedByBadge`）。
+ * 只作視覺辨識：本機仍可修改，但 BOOK 永遠不會把它回寫 scoutbadge，亦不會當成已核實進度送交。
+ */
+const isBadgeVerifiedRow = (row) =>
+  Boolean(row && typeof row === 'object' && (row.badgeRecordId || row.confirmedByBadge));
+
 /** 紙本表格（預設不顯示自創刪除鍵，手機自動展開為欄名在上、值在下） */
 export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense = false, cap }) {
   const [stored, set] = useField(path, []);
@@ -374,37 +381,50 @@ export function Rows({ path, cols, min = 4, addLabel = null, del = false, dense 
         {del && <span className="pgtable__delcol" />}
       </div>
 
-      {Array.from({ length: total }).map((_, index) => (
-        <div className="pgtable__row" style={rowStyle} key={list[index]?.id || `blank-${index}`}>
-          {cols.map((c) => (
-            <span
-              className="pgtable__cell"
-              key={c.k}
-              data-label={isEn ? c.en || englishOf(c.label) || termFor('en', c.label) : c.label}
-            >
-              <Write
-                value={list[index]?.[c.k] ?? ''}
-                onChange={(v) => setCell(index, c.k, v)}
-                type={c.type || 'text'}
-                multiline={c.rows > 1}
-                rows={c.rows || 1}
-                compact
-                placeholder={c.placeholder || ''}
-                label={isEn && c.en ? c.en : c.label}
-              />
-            </span>
-          ))}
-          {del && (
-            <span className="pgtable__delcol no-print">
-              {list[index] && (
-                <button type="button" className="rowdel" onClick={() => removeRow(index)} aria-label={isEn ? 'Delete row' : '刪除此列'}>
-                  ×
-                </button>
-              )}
-            </span>
-          )}
-        </div>
-      ))}
+      {Array.from({ length: total }).map((_, index) => {
+        const badgeVerified = isBadgeVerifiedRow(list[index]);
+        const badgeTitle = badgeVerified
+          ? isEn
+            ? 'From scoutbadge, leader-verified. Shown for reference; BOOK never writes it back to scoutbadge.'
+            : '由 scoutbadge 同步、領袖已核實；只供參閱，BOOK 不會回寫 scoutbadge。'
+          : undefined;
+        return (
+          <div
+            className={cx('pgtable__row', badgeVerified && 'is-badge-verified')}
+            style={rowStyle}
+            key={list[index]?.id || `blank-${index}`}
+            title={badgeTitle}
+          >
+            {cols.map((c) => (
+              <span
+                className="pgtable__cell"
+                key={c.k}
+                data-label={isEn ? c.en || englishOf(c.label) || termFor('en', c.label) : c.label}
+              >
+                <Write
+                  value={list[index]?.[c.k] ?? ''}
+                  onChange={(v) => setCell(index, c.k, v)}
+                  type={c.type || 'text'}
+                  multiline={c.rows > 1}
+                  rows={c.rows || 1}
+                  compact
+                  placeholder={c.placeholder || ''}
+                  label={isEn && c.en ? c.en : c.label}
+                />
+              </span>
+            ))}
+            {del && (
+              <span className="pgtable__delcol no-print">
+                {list[index] && (
+                  <button type="button" className="rowdel" onClick={() => removeRow(index)} aria-label={isEn ? 'Delete row' : '刪除此列'}>
+                    ×
+                  </button>
+                )}
+              </span>
+            )}
+          </div>
+        );
+      })}
 
       {!readOnly && addLabel !== null && (!cap || list.length < cap) && (
         <button type="button" className="addrow no-print" onClick={add}>

@@ -1,7 +1,8 @@
-# 給 SCOUTBADGE 的配合清單（SCOUTBOOK v2.0.0）
+# 給 SCOUTBADGE 的配合清單（SCOUTBOOK v2.1.5）
 
 > 寫給姊妹倉 `playerkousas-rgb/scoutbadge`（旅團進度系統）的對接文件。
 > 目的：v2.0.0 把紀錄冊由「自創 66 頁」改為「紙本官方 110 頁」，同步面**刻意零改動**；
+> v2.1.5 起 `load` 會並行讀取 `getServiceRecords`（見 §2.5），服務紀錄才會同步到 BOOK；
 > 以下列出「不用改」、「要改」與「想請你決定」三份清單，逐項可勾。
 
 ---
@@ -22,7 +23,7 @@
 | 個人資料 | BOOK 端已硬性剝除姓名、電話、地址、家長、相片 | 伺服器端仍會二次清洗，你毋須配合 |
 | 寫入方向 | BOOK 只送 `requestComplete`，永不直接寫已核實進度 | 團長在 scoutbadge 按 CONFIRM 才是完成 |
 | 二維碼協議 | `SB1.` / `SB1P.` / `SB1S.` 未改 | 純離線核簽，與你無關 |
-| `load` 回傳欄位 | `progress` / `flatProgress` / `otherBadges` / `pendingRequests` 照舊讀 | BOOK 只認這四個 |
+| `load` 回傳欄位 | `progress` / `flatProgress` / `otherBadges` / `pendingRequests` 照舊讀 | BOOK 只認這四個（服務紀錄另由 `getServiceRecords` 讀取，見 §2.5） |
 
 ---
 
@@ -95,6 +96,67 @@ BOOK 會把錯誤翻譯成中／英並給「重試」按鈕，靠的是 `code` �
 
 現時 BOOK 靠 HTTP status + `error` 字串猜，容易誤判（例如把「已提交過」當失敗）。
 
+### 2.5 `getServiceRecords`：服務紀錄的唯一讀取途徑
+
+> **背景（SCOUTBOOK v2.1.5）**：成員在 scoutbadge 內輸入的服務紀錄，在 BOOK 匯入後原本不會出現。
+> 原因不是清洗出錯，而是 `action: 'load'` **只回傳進度**（`progress` / `flatProgress`）與活動徽章
+> （`otherBadges`），服務紀錄從來不在 `load` 的回應內。BOOK 現已改為在 `load` 時**並行**呼叫
+> `getServiceRecords`。
+
+契約（與 `cubbadge` 相同）：
+
+```http
+POST <origin>/api/proxy
+Content-Type: application/json
+
+{ "troopId": "0082", "action": "getServiceRecords", "token": "<token>", "target_ymis": "<SCOUT ID>" }
+```
+
+直連旅團後端（`TROOP_<id>_BACKEND`）時，BOOK 以同一扁平 payload 直接 POST，`apikey` 由 BOOK 伺服器端注入。
+
+回應：
+
+```json
+{
+  "success": true,
+  "records": [
+    {
+      "id": "SRV_20261010_001",
+      "activity": "賣旗日服務",
+      "date": "2026-10-10",
+      "hours": 3,
+      "place": "旺角",
+      "detail": "……",
+      "status": "approved",
+      "note": "……"
+    }
+  ]
+}
+```
+
+- `id` 必須**穩定**：BOOK 以它作 `badgeRecordId` 去重，重複同步不會疊出重複行。
+- `date` 請用 `YYYY-MM-DD`；BOOK 只接受 ISO 日期（格式不明時保留紀錄、日期留空）。
+- `hours` 為數字（小時）；BOOK 只在 `> 0` 時填入「服務時數」欄。
+- `status === 'rejected'` 一律**不匯入**；`detail`、`note`、姓名等欄位 BOOK 一律丟棄。
+- BOOK 只保留 `id` / `activity` / `date` / `hours` / `place` 五個欄位，寫入第 109／110 頁
+  「服務紀錄」表（日期・主辦單位・摘要・服務時數）。
+- 讀取失敗（未登入、逾時、5xx、非 JSON）時 BOOK **安全降級**為「沒有服務紀錄」，
+  進度同步照常完成，不會顯示錯誤。
+
+**方向與核實邊界（不可退讓）**
+
+| 方向 | 內容 | BOOK 的行為 |
+| --- | --- | --- |
+| BADGE → BOOK | 已核實服務紀錄 | 只**參閱**：寫入第 109／110 頁，綠底標示「scoutbadge · 已核實」；BOOK 不回寫 |
+| BOOK → BADGE | 成員自填進度 | 只經 `requestComplete` 送交，`status: 'pending'`；領袖在 scoutbadge 按 CONFIRM 才寫入 |
+
+- BOOK **沒有**任何寫入服務紀錄的動作；`getServiceRecords`、`save`、`saveOtherBadge`、
+  `reviewRequest`、`approveRequest`、`rejectRequest` 由瀏覽器呼叫一律 `403`，且不會轉發上游。
+- BOOK 送出的申報檔（`exportForBadge`）只含 `progress` / `otherBadges` 的待核實項目；
+  服務紀錄（第 109／110 頁）**永不**出現在申報檔內，因此不可能繞過領袖核實。
+- 成員若在本機修改了已同步的服務列，改動只留在本機，不會回寫；正式紀錄仍以 scoutbadge
+  內領袖核實的版本為準。
+
 ### 2.4 `requestComplete` 必須冪等
 
 露營現場訊號差，BOOK 會**重試同一批**（最多 200 項／批，30 秒 timeout）。請以
@@ -164,6 +226,8 @@ BOOK 現在有、但**不入同步**的：
 | 3 | 同一項目重複提交 | BADGE 回 `duplicate: true`，不重複入 pending |
 | 4 | token 過期 | 回 `AUTH_EXPIRED`，BOOK 自動重登一次 |
 | 5 | 200 項一批 + 30 秒 timeout | 分批成功／失敗逐項回報，BOOK 只重送失敗項 |
+| 7 | `getServiceRecords` 失敗／逾時 | `load` 照樣成功，`serviceRecords` 為 `[]`，BOOK 不報錯 |
+| 8 | 同一批服務紀錄重複同步 | 以 `id` 及「日期｜摘要」去重，BOOK 不重複寫入 |
 | 6 | 旅團 id 改名 | 用 `legacyIds` 對應，用戶不用重選（**BOOK 尚未實作**：現時用戶須重新選擇旅團並登入） |
 
 BOOK 端的契約測試在 `tests/scoutbadge_sync.test.mjs`（SB1 編解碼、403 封鎖、PII 剝除、
@@ -179,4 +243,4 @@ BOOK 端的契約測試在 `tests/scoutbadge_sync.test.mjs`（SB1 編解碼、40
 
 ---
 
-_最後更新：SCOUTBOOK v2.1.1（2026-11-10：§2.1、§2.2 及 §4 第 6 項按現行程式與線上回應更正；其餘章節仍為 v2.0.0／2026-11-06 的內容）。有疑問直接在本 repo 開 issue，或看 `api/scoutbadge.js` 的檔頭契約。_
+_最後更新：SCOUTBOOK v2.1.5（2026-11-20：新增 §2.5 `getServiceRecords` 服務紀錄契約及 §4 第 7–8 項；v2.1.1／2026-11-10 曾按現行程式與線上回應更正 §2.1、§2.2 及 §4 第 6 項；其餘章節仍為 v2.0.0／2026-11-06 的內容）。有疑問直接在本 repo 開 issue，或看 `api/scoutbadge.js` 的檔頭契約。_

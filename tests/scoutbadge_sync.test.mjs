@@ -10,6 +10,7 @@ import {
 import handler, {
   resolveBadgeOrigin,
   filterPersonalConfirmedLoad,
+  filterPersonalServiceRecords,
   sanitizePendingSubmissions,
 } from '../api/scoutbadge.js';
 
@@ -481,6 +482,306 @@ test('load 與 submitPending 經 /api/proxy 轉發，且送交只會是 requestC
     }
     assert.equal(stub.calls[0].body.itemId, 'L2-A1');
     assert.equal(stub.calls[1].body.itemId, 'SC-PUR-001');
+  } finally {
+    stub.restore();
+  }
+});
+
+test('filterPersonalServiceRecords：只留已核實服務紀錄，剔除 rejected 與所有個人資料', () => {
+  const cleaned = filterPersonalServiceRecords({
+    success: true,
+    records: [
+      {
+        id: 'SRV_1',
+        activity: '  賣旗日服務 ',
+        date: '2026-10-10',
+        hours: 3,
+        place: '旺角',
+        detail: '內部細節',
+        note: '內部備註',
+        status: 'approved',
+        name: '陳小鷹',
+        phone: '91234567',
+        address: '沙田',
+        photo: 'data:image/png;base64,AAA',
+      },
+      { id: 'SRV_2', activity: '已拒絕項目', date: '2026-10-11', hours: 2, status: 'rejected' },
+      { id: 'SRV_3', activity: '日期格式不明', date: '11/10/2026', hours: 0, place: ' ' },
+      { activity: '', date: '', hours: 1 },
+      'not-a-record',
+    ],
+  });
+
+  assert.deepEqual(cleaned, [
+    { id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', hours: 3, place: '旺角' },
+    { id: 'SRV_3', activity: '日期格式不明', date: '' },
+  ]);
+  const json = JSON.stringify(cleaned);
+  for (const pii of ['陳小鷹', '91234567', '沙田', 'base64', '內部細節', '內部備註', '已拒絕']) {
+    assert.equal(json.includes(pii), false, `清洗後仍含 ${pii}`);
+  }
+
+  // 任何失敗（未登入、逾時、上游錯誤）一律安全降級為空陣列
+  assert.deepEqual(filterPersonalServiceRecords(null), []);
+  assert.deepEqual(filterPersonalServiceRecords({ success: false, error: '登入已過期' }), []);
+  assert.deepEqual(filterPersonalServiceRecords({ success: true }), []);
+  assert.deepEqual(filterPersonalServiceRecords({ success: true, records: 'nope' }), []);
+});
+
+test('load 同步讀取 getServiceRecords：清洗後附在 serviceRecords，失敗時安全降級為 []', async () => {
+  const callAction = (init) => {
+    if (!init?.body) return '';
+    try {
+      return JSON.parse(init.body).action || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const stub = stubFetch(({ init }) => {
+    if (callAction(init) === 'getServiceRecords') {
+      return okJson({
+        success: true,
+        records: [
+          {
+            id: 'SRV_1',
+            activity: '賣旗日服務',
+            date: '2026-10-10',
+            hours: 3,
+            place: '旺角',
+            detail: '內部細節',
+            status: 'approved',
+            name: '陳小鷹',
+            phone: '91234567',
+          },
+          { id: 'SRV_2', activity: '已拒絕項目', date: '2026-10-11', status: 'rejected' },
+        ],
+      });
+    }
+    return okJson({
+      success: true,
+      progress: { '0012345678': { 'L1-M1': { date: '2024-09-07', confirmer: '李團長' } } },
+      otherBadges: {},
+      pendingRequests: [],
+    });
+  });
+
+  try {
+    const load = await callApi('POST', {
+      action: 'load',
+      troopId: 'T12',
+      data: { token: 'tok-abc-123', ymis: '0012345678' },
+    });
+    assert.equal(load.status, 200);
+    assert.equal(load.body.success, true);
+    // 進度照舊；服務紀錄另有 serviceRecords 欄
+    assert.equal(load.body.progress['0012345678']['L1-M1'].date, '2024-09-07');
+    assert.deepEqual(load.body.serviceRecords, [
+      { id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', hours: 3, place: '旺角' },
+    ]);
+    const jsonText = JSON.stringify(load.body);
+    for (const pii of ['陳小鷹', '91234567', '內部細節', '已拒絕']) {
+      assert.equal(jsonText.includes(pii), false, `load 回應仍含 ${pii}`);
+    }
+
+    // 上游服務紀錄必須以 target_ymis 指向本人，並沿用同一個 token
+    const serviceCall = stub.calls.find((c) => callAction(c.init) === 'getServiceRecords');
+    assert.ok(serviceCall, 'load 必須同步呼叫 getServiceRecords');
+    const serviceBody = JSON.parse(serviceCall.init.body);
+    assert.equal(serviceBody.target_ymis, '0012345678');
+    assert.equal(serviceBody.token, 'tok-abc-123');
+  } finally {
+    stub.restore();
+  }
+
+  // 上游 getServiceRecords 失敗（網絡錯誤／回非 JSON）：進度照樣同步，服務紀錄為 []
+  for (const fail of [
+    () => {
+      throw new Error('boom');
+    },
+    () => okJson({ success: false, error: '未登入' }),
+    () => ({ ok: false, json: async () => null }),
+  ]) {
+    const downStub = stubFetch(({ init }) => {
+      if (callAction(init) === 'getServiceRecords') return fail();
+      return okJson({
+        success: true,
+        progress: { '0012345678': { 'L1-M1': { date: '2024-09-07' } } },
+        otherBadges: {},
+        pendingRequests: [],
+      });
+    });
+    try {
+      const load = await callApi('POST', {
+        action: 'load',
+        troopId: 'T12',
+        data: { token: 'tok-abc-123', ymis: '0012345678' },
+      });
+      assert.equal(load.status, 200);
+      assert.equal(load.body.success, true);
+      assert.deepEqual(load.body.serviceRecords, []);
+      assert.equal(load.body.progress['0012345678']['L1-M1'].date, '2024-09-07');
+    } finally {
+      downStub.restore();
+    }
+  }
+});
+
+test('importFromBadge：服務紀錄寫入第 109 頁、以 badgeRecordId 及日期｜摘要去重、不覆蓋本機手寫紀錄', () => {
+  const book = newBook({ member: { scoutId: '0012345678' } });
+  book.pages.p109 = {
+    rows: [
+      { id: 'r_local', date: '2026-09-01', org: '旅團', brief: '本機手寫服務', hours: '2' },
+      { id: 'r_blank' },
+    ],
+  };
+
+  const payload = {
+    success: true,
+    progress: { '0012345678': {} },
+    serviceRecords: [
+      { id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', hours: 3, place: '旺角' },
+      // 與本機手寫紀錄同日期同摘要 → 略過，不覆蓋
+      { id: 'SRV_2', activity: '本機手寫服務', date: '2026-09-01', hours: 2 },
+      // 同一 badgeRecordId 再次出現 → 略過
+      { id: 'SRV_1', activity: '重複上游紀錄', date: '2026-10-10' },
+      { id: 'SRV_3', activity: '營地服務', date: '2026-10-12', hours: 4.5, place: '西貢', note: '內部備註' },
+      // 代理層已擋 rejected；前端再擋一次
+      { id: 'SRV_4', activity: '已拒絕服務', date: '2026-10-13', status: 'rejected' },
+      { id: 'SRV_5', activity: '', date: '', hours: 2 },
+    ],
+  };
+
+  const res = importFromBadge(payload, book, { expectedScoutId: '0012345678' });
+  assert.equal(res.importedServices, 2);
+  const rows = res.book.pages.p109.rows;
+  assert.equal(rows.length, 3);
+  // 本機手寫紀錄原封不動（沒有 badgeRecordId）
+  assert.deepEqual(rows[0], { id: 'r_local', date: '2026-09-01', org: '旅團', brief: '本機手寫服務', hours: '2' });
+  // 空白列先填，保留原有 row id
+  assert.deepEqual(rows[1], {
+    id: 'r_blank',
+    date: '2026-10-10',
+    org: '旺角',
+    brief: '賣旗日服務',
+    hours: '3',
+    badgeRecordId: 'SRV_1',
+  });
+  assert.deepEqual(rows[2], {
+    date: '2026-10-12',
+    org: '西貢',
+    brief: '營地服務',
+    hours: '4.5',
+    badgeRecordId: 'SRV_3',
+  });
+  assert.equal(JSON.stringify(rows).includes('內部備註'), false);
+  assert.equal(res.book.member.nameZh, '');
+  assert.equal(res.book.member.phone, '');
+
+  // 再次匯入同一批服務紀錄：全部去重，不新增任何行
+  const again = importFromBadge(payload, res.book, { expectedScoutId: '0012345678' });
+  assert.equal(again.importedServices, 0);
+  assert.equal(again.book.pages.p109.rows.length, 3);
+  assert.deepEqual(again.book.pages.p109.rows[0], rows[0]);
+});
+
+test('importFromBadge：第 109 頁滿行後服務紀錄寫入第 110 頁', () => {
+  const book = newBook({ member: { scoutId: '0012345678' } });
+  book.pages.p109 = {
+    rows: Array.from({ length: 8 }, (_, i) => ({
+      id: `r_${i}`,
+      date: `2026-0${i + 1}-01`,
+      org: '旅團',
+      brief: `手寫服務 ${i + 1}`,
+      hours: '1',
+    })),
+  };
+
+  const res = importFromBadge(
+    {
+      success: true,
+      progress: { '0012345678': {} },
+      serviceRecords: [{ id: 'SRV_9', activity: '第九項服務', date: '2026-10-20', hours: 2 }],
+    },
+    book,
+    { expectedScoutId: '0012345678' },
+  );
+  assert.equal(res.importedServices, 1);
+  assert.equal(res.book.pages.p109.rows.length, 8);
+  assert.equal(res.book.pages.p109.rows[7].brief, '手寫服務 8');
+  assert.equal(res.book.pages.p110.rows.length, 1);
+  assert.deepEqual(res.book.pages.p110.rows[0], {
+    date: '2026-10-20',
+    brief: '第九項服務',
+    hours: '2',
+    badgeRecordId: 'SRV_9',
+  });
+});
+
+test('BOOK 只讀 BADGE：服務紀錄永不回寫、申報一律 pending、原始服務紀錄不可直讀', async () => {
+  const book = newBook({ member: { scoutId: '0012345678' } });
+  const res = importFromBadge(
+    {
+      success: true,
+      progress: { '0012345678': {} },
+      serviceRecords: [
+        { id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', hours: 3, place: '旺角' },
+      ],
+    },
+    book,
+    { expectedScoutId: '0012345678' },
+  );
+  assert.equal(res.importedServices, 1);
+
+  // 服務紀錄只是本冊的參閱資料：不會變成已核實進度、活動徽章或待批申報
+  assert.deepEqual(res.book.progress, {});
+  assert.deepEqual(res.book.otherBadges, {});
+  assert.equal(collectPendingForBadge(res.book).length, 0);
+
+  // 成員在本機自填一項進度後匯出：只有該項，而且一律 pending、confirmed: false
+  res.book.progress['L2-A1'] = { date: '2026-10-05' };
+  const out = exportForBadge(res.book, 'T12');
+  assert.equal(out.status, 'pending');
+  assert.equal(out.confirmed, false);
+  assert.deepEqual(out.pendingRequests.map((r) => r.item_id), ['L2-A1']);
+  assert.deepEqual(out.pendingRequests.map((r) => r.status), ['pending']);
+  assert.deepEqual(out.pendingRequests.map((r) => r.confirmed), [false]);
+  const payload = JSON.stringify(out);
+  for (const leak of ['賣旗日服務', 'SRV_1', '旺角', 'p109', 'badgeRecordId']) {
+    assert.equal(payload.includes(leak), false, `匯出到 BADGE 的申報檔不應含服務紀錄：${leak}`);
+  }
+
+  // 即使持有 token，瀏覽器也不可直讀上游原始服務紀錄（含姓名等個人資料），
+  // 亦不可自行寫入任何進度：一律 403，且被拒絕的動作永不轉發上游。
+  const stub = stubFetch(() =>
+    okJson({
+      success: true,
+      records: [{ id: 'SRV_1', activity: '賣旗日服務', date: '2026-10-10', status: 'approved', name: '陳小鷹' }],
+    }),
+  );
+  try {
+    for (const action of [
+      'getServiceRecords',
+      'save',
+      'saveOtherBadge',
+      'saveServiceRecord',
+      'reviewRequest',
+      'approveRequest',
+      'rejectRequest',
+    ]) {
+      const r = await callApi('POST', {
+        action,
+        troopId: 'T12',
+        data: {
+          token: 'tok-abc-123',
+          ymis: '0012345678',
+          records: [{ id: 'SRV_9', activity: '自行寫入', date: '2026-10-11', status: 'approved' }],
+        },
+      });
+      assert.equal(r.status, 403, `${action} 必須 403`);
+      assert.equal(r.body.success, false);
+    }
+    assert.equal(stub.calls.length, 0, '被拒絕的動作不得轉發 scoutbadge');
   } finally {
     stub.restore();
   }

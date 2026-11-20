@@ -232,10 +232,21 @@ function OtherBadgesPage({ spec }) {
 function RecordTablePage({ spec }) {
   const { isEn } = useLang();
   const cols = RECORD_COLS[spec.cols] || RECORD_COLS.service;
+  const isService = spec.cols === 'service';
   return (
     <Page id={spec.id}>
       <H en={spec.en}>{isEn ? spec.en : spec.zh}</H>
       <Rows path={`pages.${spec.id}.rows`} cols={cols} min={8} del />
+      {isService && (
+        <p className="syncfoot no-print">
+          <Icon name="verified" size={13} />
+          <span>
+            {isEn
+              ? 'Green-tinted rows were synced from scoutbadge and already verified by your leader. They are for reference and printing only — BOOK never writes service records back to scoutbadge. To add or correct one, the leader must do it in scoutbadge (CONFIRM).'
+              : '綠底列是由 scoutbadge 同步、領袖已核實的服務紀錄，只供參閱及列印；BOOK 永遠不會把服務紀錄回寫 scoutbadge。要新增或更正，須由領袖在 scoutbadge 內處理並按 CONFIRM 核實。'}
+          </span>
+        </p>
+      )}
       <SyncFootnote />
     </Page>
   );

@@ -6,7 +6,9 @@
       地址、家長／監護人資料、相片及任何其他成員的紀錄。
    2. BADGE → BOOK（action = 'load'）：只回傳該成員在 scoutbadge 內「領袖已核實」的
       `progress` / `flatProgress` / `otherBadges`；`pendingRequests` 只列出作識別，未核實
-      項目絕不混入已核實進度。
+      項目絕不混入已核實進度。`load` 本身**不含服務紀錄**，故代理層會同步呼叫上游
+      `getServiceRecords`（`{ token, target_ymis: ymis }`），清洗後附在回應的
+      `serviceRecords`；呼叫失敗時安全降級為空陣列，絕不影響進度同步。
    3. BOOK → BADGE（action = 'submitPending'）：硬性封鎖 `save` / `saveOtherBadge`（HTTP 403），
       一律只轉發 `requestComplete`，在 scoutbadge 內寫入「待批完成 status: pending」；
       必須由團長在 scoutbadge 按 CONFIRM 方為完成。
@@ -237,6 +239,40 @@ export function filterPersonalConfirmedLoad(raw, targetYmis) {
 }
 
 /**
+ * 清洗 scoutbadge `getServiceRecords` 回傳的個人服務紀錄：
+ * - 只保留領袖已核實（`status !== 'rejected'`）的紀錄；
+ * - 只輸出身分無關的五個欄位 `id`／`activity`／`date`／`hours`／`place`，
+ *   `detail`、`note`、姓名、電話、地址、相片等一律丟棄；
+ * - 任何失敗（未登入、逾時、上游錯誤）一律降級為空陣列。
+ */
+export function filterPersonalServiceRecords(raw) {
+  if (!raw || typeof raw !== 'object' || !raw.success || !Array.isArray(raw.records)) return [];
+  const out = [];
+  for (const rec of raw.records) {
+    if (!rec || typeof rec !== 'object') continue;
+    const status = String(rec.status || 'approved').trim().toLowerCase();
+    if (status === 'rejected') continue;
+    const activity = String(rec.activity || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+    const rawDate = String(rec.date || '').trim().slice(0, 10);
+    // 只接受 ISO 日期；格式不明時保留紀錄本身（服務時數不會白費），只是日期留空。
+    const date = isIsoDate(rawDate) ? rawDate : '';
+    if (!activity && !date) continue;
+    const id = String(rec.id || '').trim().slice(0, 48);
+    const hours = Number(rec.hours || 0);
+    const place = String(rec.place || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    out.push({
+      ...(id ? { id } : {}),
+      activity,
+      date,
+      ...(Number.isFinite(hours) && hours > 0 ? { hours } : {}),
+      ...(place ? { place } : {}),
+    });
+    if (out.length >= MAX_ITEMS) break;
+  }
+  return out;
+}
+
+/**
  * 清洗成員送交 scoutbadge「待領袖核實」的申報項目：只保留項目代號及日期，
  * 任何姓名、電話、地址、家長資料或相片欄位一律丟棄；BOOK 內部編號亦在此轉為
  * scoutbadge 官方編號，確保 BADGE 毋須認識 BOOK 的命名。
@@ -430,11 +466,24 @@ export default async function handler(req, res) {
     if (action === 'load') {
       const ymis = String(rawData.ymis || '').trim().slice(0, 32);
       if (!ymis) return sendJson(res, 400, { success: false, error: '缺少童軍成員編號（SCOUT ID）' });
-      const rawJson = await callBadgeAction({ origin, directTroop, troopId, action: 'load', data: { token } });
+      // `load` 只回傳進度及活動徽章，服務紀錄必須另以 `getServiceRecords` 讀取；
+      // 兩者並行，服務紀錄失敗時只降級為 `[]`，絕不令進度同步失敗。
+      const [rawJson, serviceRaw] = await Promise.all([
+        callBadgeAction({ origin, directTroop, troopId, action: 'load', data: { token } }),
+        callBadgeAction({
+          origin,
+          directTroop,
+          troopId,
+          action: 'getServiceRecords',
+          data: { token, target_ymis: ymis },
+        }).catch(() => null),
+      ]);
       if (!rawJson || typeof rawJson !== 'object') {
         return sendJson(res, 502, { success: false, error: 'scoutbadge 後端回應異常' });
       }
-      return sendJson(res, 200, filterPersonalConfirmedLoad(rawJson, ymis));
+      const filtered = filterPersonalConfirmedLoad(rawJson, ymis);
+      if (filtered.success) filtered.serviceRecords = filterPersonalServiceRecords(serviceRaw);
+      return sendJson(res, 200, filtered);
     }
 
     if (action === 'submitPending') {
