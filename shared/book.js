@@ -47,7 +47,7 @@ export {
   officialPageByNo,
 };
 
-export const APP_VERSION = 'v2.1.4';
+export const APP_VERSION = 'v2.1.5';
 export const STORE_KEY = 'scoutbook.book.v1';
 export const LEGACY_STORE_KEYS = [];
 
@@ -735,10 +735,23 @@ export function exportForBadge(book, troopId = '') {
   };
 }
 
+// 服務紀錄寫入的紙本頁序（服務紀錄（一）／（二））及每頁行數上限。
+// 第 109 頁滿 8 行才用第 110 頁；空白列會優先填寫，本機手寫內容永不改動。
+export const SERVICE_RECORD_PAGES = ['p109', 'p110'];
+export const SERVICE_ROWS_PER_PAGE = 8;
+
+/** 一行服務紀錄是否完全空白（只有自動產生的 row id 也算空白）。 */
+function isBlankServiceRow(row) {
+  if (!row || typeof row !== 'object') return false;
+  return !['date', 'org', 'brief', 'hours'].some((k) => String(row[k] ?? '').trim());
+}
+
 /**
  * 從 scoutbadge 錄入已核實進度至個人 BOOK。
  * - 只認 progress／flatProgress／otherBadges 內領袖已核實的日期；
  * - pendingRequests 只作識別（skippedPending），永不寫入；
+ * - serviceRecords（另由 `getServiceRecords` 讀取）寫入第 109／110 頁「服務紀錄」表，
+ *   以 `badgeRecordId` 及「日期｜摘要」去重，本機手寫紀錄永不覆蓋；
  * - 完全不改動 book.member 的姓名、電話、地址、家長、相片等個人資料；
  * - 空白簿（未填任何個人資料）只要帶同 SCOUT ID 亦即可綁定及拉齊進度。
  */
@@ -863,6 +876,79 @@ export function importFromBadge(json, srcBook, { expectedScoutId = '' } = {}) {
     }
   }
 
+  // 服務紀錄：`load` 不含服務紀錄，必須讀取代理層附上的 `serviceRecords`
+  // （來自 scoutbadge `getServiceRecords`），寫入第 109／110 頁的服務紀錄表。
+  // 去重鍵：`badgeRecordId` 及「日期｜摘要」；先填空白列，本機手寫紀錄永不覆蓋。
+  let importedServices = 0;
+  if (Array.isArray(json.serviceRecords) && json.serviceRecords.length) {
+    const pages = { ...(next.pages || {}) };
+    const rowsOf = (id) => (Array.isArray(pages[id]?.rows) ? pages[id].rows.slice() : []);
+    const seenIds = new Set();
+    const seenKeys = new Set();
+    for (const pageId of SERVICE_RECORD_PAGES) {
+      for (const row of rowsOf(pageId)) {
+        if (!row || typeof row !== 'object') continue;
+        const badgeId = String(row.badgeRecordId || '').trim();
+        if (badgeId) seenIds.add(badgeId);
+        if (row.date || row.brief) {
+          seenKeys.add(`${String(row.date || '').trim()}|${String(row.brief || '').trim()}`);
+        }
+      }
+    }
+
+    for (const rec of json.serviceRecords) {
+      if (!rec || typeof rec !== 'object') continue;
+      // 防禦性清洗：代理層已剔除 rejected 及個人資料，這裡再確認一次。
+      const status = String(rec.status || 'approved').trim().toLowerCase();
+      if (status === 'rejected') continue;
+      const badgeId = String(rec.id || '').trim().slice(0, 48);
+      const rawDate = String(rec.date || '').trim().slice(0, 10);
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : '';
+      const activity = String(rec.activity || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+      const place = String(rec.place || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      const hoursNum = Number(rec.hours || 0);
+      const hours = Number.isFinite(hoursNum) && hoursNum > 0 ? String(hoursNum) : '';
+      if (!activity && !date) continue;
+      if (badgeId && seenIds.has(badgeId)) continue;
+      const key = `${date}|${activity}`;
+      if (seenKeys.has(key)) continue;
+
+      const entry = {
+        date,
+        ...(place ? { org: place } : {}),
+        brief: activity,
+        ...(hours ? { hours } : {}),
+        ...(badgeId ? { badgeRecordId: badgeId } : {}),
+      };
+
+      let placed = false;
+      for (const pageId of SERVICE_RECORD_PAGES) {
+        const rows = rowsOf(pageId);
+        const at = rows.findIndex(isBlankServiceRow);
+        if (at === -1) continue;
+        // 保留原有 row id，只填值：介面不會因重新匯入而重建整張表。
+        rows[at] = { ...rows[at], ...entry };
+        pages[pageId] = { ...(pages[pageId] || {}), rows };
+        placed = true;
+        break;
+      }
+      if (!placed) {
+        const firstPageId = SERVICE_RECORD_PAGES[0];
+        const firstFilled = rowsOf(firstPageId).filter((r) => r && !isBlankServiceRow(r)).length;
+        const pageId = firstFilled < SERVICE_ROWS_PER_PAGE ? firstPageId : SERVICE_RECORD_PAGES[1];
+        const rows = rowsOf(pageId);
+        rows.push(entry);
+        pages[pageId] = { ...(pages[pageId] || {}), rows };
+      }
+
+      if (badgeId) seenIds.add(badgeId);
+      seenKeys.add(key);
+      importedServices += 1;
+    }
+
+    if (importedServices) next.pages = pages;
+  }
+
   // 空白簿免填個人資料即可同步：只綁定編號，不寫入任何個人資料。
   if (!scoutId(next.member) && targetId) {
     next.member = { ...next.member, scoutId: targetId, memberNo: targetId };
@@ -876,7 +962,7 @@ export function importFromBadge(json, srcBook, { expectedScoutId = '' } = {}) {
     lastBadgeSyncMatchedBy: matchedBy || '',
   };
 
-  return { book: next, imported, skippedPending, matchedBy };
+  return { book: next, imported, importedServices, skippedPending, matchedBy };
 }
 
 // ------------------------------------------------------------------ 列印及示範資料

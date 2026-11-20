@@ -2,13 +2,13 @@
 
 > **童軍支部個人隨身離線電子紀錄冊** —— 逐頁對應香港童軍總會《童軍紀錄冊》及 2026 年修訂版《童軍訓練綱要》，支援就地打字／手寫簽名、一鍵生成及列印 `PT/18`・`P120A1`・`P120A2` 官方表格、成員⇄領袖純離線二維碼核簽，以及與 `scoutbadge` 旅團進度表的**純進度、零個人資料**雙向同步。
 
-- **目前版本**：`v2.1.4`（2026-11-14；容許「服務平台」以 iframe 嵌入，見下文「嵌入服務平台」；見 [CHANGELOG.md](CHANGELOG.md)）
+- **目前版本**：`v2.1.5`（2026-11-20；修正 scoutbadge 服務紀錄未能同步到第 109／110 頁的問題，見 [CHANGELOG.md](CHANGELOG.md)）
 - **架構形態**：離線優先 PWA（React + Vite + Service Worker，`localStorage` 本機儲存，零帳號、零雲端上傳；可選配 Vercel `/api/leader` 與 `/api/scoutbadge` 伺服器端接口）
 - **設計主題**：對齊 `CUBSBOOK` `v1.0.2`／`VSBOOK` `v1.0.0`／`ROVERBOOK` `v16` 的介面、安全區與版權規範，改用**童軍綠布面**封面（`#143b28 → #08180f` × 燙金 `#e3c07a`／`#f6e6bb` × 象牙內頁 `#f7f2e7`）；重點按鈕及進度條同樣用童軍綠。金字只准配深綠（10.06:1），金底按鈕一律深炭字（10.67:1）；手寫墨及蓋印一律深童軍綠，會員章／總領袖獎章／制服圖版用官方裁圖（`web/public/official/`）並保留原印顏色，確保 WCAG AA（見 [`docs/design-review.md`](docs/design-review.md)）。
 - **一句話**：BOOK 是「這一位成員」的口袋紀錄冊；全團名冊、批量簽核、多成員切換一律留在 `scoutbadge`。
 - **獨立優先**：BOOK **不接 scoutbadge 亦 100% 可用** —— 逐頁填寫、簽名、官方表格、A4 列印、離線二維碼、JSON 備份全部在本機完成。`scoutbadge` 只是「可選」的免重打同步；純靜態主機（無 `/api`）會自動顯示「獨立模式」，紀錄冊本身的功能一項不少。唯一需要連線的是 **scoutbadge 進度檔**的匯出／匯入：必須先在「數位附錄」連接並登入 scoutbadge（完整紀錄冊備份與還原不受影響）。
 
-> 目前狀態：`v2.1.4`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
+> 目前狀態：`v2.1.5`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
 
 ---
 
@@ -41,7 +41,7 @@ node scripts/preflight_v1.0.mjs .
 | :-: | :--- | :--- |
 | 1 | **BOOK ≠ BADGE** | 只做單一成員的紀錄冊、進度獎章、專科徽章與官方表格。**不做**全團名冊、批量簽核、多成員切換槽（屬 `scoutbadge`）。 |
 | 2 | **全螢幕＝一本實體書 + 綠金對比陷阱** | `100dvh` 布面封面與紙本內頁、無卡片框線陰影；空白欄只顯示小圓點 `.write__dot`（列印自動隱藏）；就地打字自動縮字；簽名壓縮為單色透明 PNG。金字只配深綠，中綠只配象牙白字。中英文完全分開，一鍵 `中文 / EN`。 |
-| 3 | **BOOK ⇄ BADGE 純進度同步（可選）** | 只傳 `SCOUT ID`、項目代號、日期；未接駁時以獨立模式運作。空白簿從自動讀取的**已登記旅團**清單選取旅團，輸入 SCOUT ID + `scoutbadge` 密碼即可綁定並拉取已核實進度；找不到旅團即引導前往 `scoutbadge` 開戶及登記。`pendingRequests` **永不**錄入；`save`／`saveOtherBadge` 一律 `403`；BOOK→BADGE 只轉發 `requestComplete`，寫入 `status: 'pending'`。**未連接並登入 `scoutbadge` 前，不可匯出或匯入 scoutbadge 進度檔**（完整紀錄冊備份不受影響）。旅團清單由伺服器端向 `SCOUTBADGE_ORIGIN` 的 `GET /api/troops` 取得，BOOK 不存 Google Sheet 網址或 API key。 |
+| 3 | **BOOK ⇄ BADGE 純進度同步（可選）** | 只傳 `SCOUT ID`、項目代號、日期；未接駁時以獨立模式運作。空白簿從自動讀取的**已登記旅團**清單選取旅團，輸入 SCOUT ID + `scoutbadge` 密碼即可綁定並拉取已核實進度；找不到旅團即引導前往 `scoutbadge` 開戶及登記。`pendingRequests` **永不**錄入；`save`／`saveOtherBadge` 一律 `403`；BOOK→BADGE 只轉發 `requestComplete`，寫入 `status: 'pending'`。服務紀錄另經 `getServiceRecords` 讀取，去重後寫入第 109／110 頁「服務紀錄」表（本機手寫紀錄永不覆蓋）。**未連接並登入 `scoutbadge` 前，不可匯出或匯入 scoutbadge 進度檔**（完整紀錄冊備份不受影響）。旅團清單由伺服器端向 `SCOUTBADGE_ORIGIN` 的 `GET /api/troops` 取得，BOOK 不存 Google Sheet 網址或 API key。 |
 | 4 | **領袖模式（只讀）與普通模式嚴格分離** | 普通模式不能讀取他人紀錄冊，只能貼上領袖簽發的 `SB1S.` 核簽碼；出示 QR（`SB1.`）預設全不剔選。領袖模式以伺服器端 `LEADER_CODE`（**不加 `VITE_`**、`crypto.timingSafeEqual` 比對）解鎖後，本機紀錄冊鎖為唯讀，只可當面掃描及簽發 `SB1S.`。 |
 | 5 | **項目 ID 單一真相** | `shared/syllabus.js` 由 `scoutbadge/data/items.json` 產生，75 個進度細項（`L1`–`L5`）+ 143 個專科徽章逐一對照，測試以 fixture 的 sha256 與 ID 清單鎖定。BOOK 內部鍵＝官方編號原文，零映射。 |
 | 6 | **官方表格自動帶入 + A4 忠實列印** | `PT/18`（總領袖獎章及證書申請表）、`P120A1`（專科徽章／獎章考驗申請表）、`P120A2`（附加資料表格）自動填入；不適用表格（`PT/65`・`PT/19`・`PT/20`・`PT/21`・`PT/22`・`PT/69`・`PT/68`）一律不加入。桌面／平板維持 A4 比例，`≤740px` 手機自動單欄、無水平捲軸。 |
