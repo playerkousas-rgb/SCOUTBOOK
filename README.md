@@ -108,7 +108,7 @@ initStoreGate({
   appKey: 'scoutbook',
   mode: localDev ? 'open' : 'entry-gate',       // 本機開發（localhost）直接開放
   portalIds: ['appstore'],                       // SG17：BOOK 類只需認 APP STORE
-  silentPortalIds: ['library', 'member'],        // SG19：照放行，但唔畫掣
+  silentPortalIds: ['member'],                   // 唯一例外：成員系統照放行，但卡上唔提、唔畫掣
   allowStandalone: true,                         // SG11-a：已裝主畫面／現有用戶照用
   autoRedirectSeconds: 0,
 });
@@ -117,7 +117,8 @@ initStoreGate({
 | 情況 | 結果 |
 | :--- | :--- |
 | 由 SCOUT APP STORE 進入 | 放行，並在本分頁以 `sessionStorage['scoutbook.store_pass']` 記住通行 |
-| 由通告圖書館／成員系統進入 | 放行（靜默入口，不顯示按鈕） |
+| 由成員系統進入（例外，靜默） | 放行，但**卡上永不顯示**該入口；成員系統本身公開並已內置四本 BOOK，成員唔會冇路入 |
+| 由通告圖書館、區管理系統等其他網站進入 | 不放行：任何公開入口都會令「落架後普通人入唔到」失效 |
 | 已加入主畫面（standalone PWA） | 直接放行；紀錄照用 |
 | 直接開啟網址（新工作階段、無入口） | 顯示白名單提示卡，只有一粒「前往 APP STORE」按鈕，並即時說明「已保存在這部裝置的紀錄不會被刪除」；**不**自動跳轉 |
 | 離線開啟 | 閘檔案在 Service Worker 的 `SHELL` 內，照樣判斷得到；紀錄冊功能不變 |
@@ -126,7 +127,8 @@ initStoreGate({
 - **設計目標**：擋**一般用家**（收到轉發連結、開舊書籤／搜尋結果、唔知要由 APP STORE 入嘅成員同家長），**唔係擋技術人員**。識用 DevTools 改 `sessionStorage`、或自行偽造 `Referer` 嘅人一定入得到 —— 呢點係已知並接受，所以唔會加後端驗票、唔會加反調試；閘腳本載入失敗時亦 fail-open，寧願放行都唔鎖死用家手上嘅紀錄。
 - **私隱和限制**：這是前端導流，**不是身份驗證或安全邊界**；`/api/leader`（`LEADER_CODE`）與 `/api/scoutbadge` 的保護**不靠**此閘。`Referer` 可被偽造、`sessionStorage` 可被改動，但都只影響「有冇經入口」的表象，改不到別人的資料。
 - **離線及舊連結**：新分頁／新工作階段可能沒有通行紀錄而再見白名單卡，由任一入口進入即可；直接 `#v=` 分享連結若被攔截，返回主站會失去片段，領袖要先經入口進入再重新開啟分享連結。已安裝的舊版需先連網更新，才會快取到閘檔案。
-- **成員系統**：保留 ADR 0004 的 iframe CSP 與分割儲存設計；若入口連結帶 `noreferrer`（清空 `Referer`），或瀏覽器／私隱設定抑制來源，會被擋或重整後要重新經入口 —— 這不會刪除原有資料。
+- **落架開關（呢個閘存在的理由）**：APP STORE 一落架，普通人就沒有入口，直開網址只會見到白名單卡；已加入主畫面的用家照用（手上有真實紀錄，唔可以因為落架而失去更新／匯出）。要連成員都停，改用 `mode: 'closed'` 或 Vercel Pause，並**先叫用家匯出 JSON 備份**。
+- **成員系統（例外）**：保留 ADR 0004 的 iframe CSP 與分割儲存設計，並繼續靜默放行；但**不在卡上列出、不在 App 內宣傳**，避免把例外變成公開後門。成員系統現時連結帶 `noreferrer`，由 `/books` 直接跳入有機會被擋，建議在成員系統內以內嵌方式使用。
 - **讚好／收藏（SG18）**：頂欄及歡迎頁各有一粒「讚好／收藏」，只以 `ScoutStoreGate.getAppStoreUrl('scoutbook')` 開新分頁返回 APP STORE 詳情卡（slug 對照主站 `20261116-app-slug-seed.sql` 核實）；**不**直連主站資料庫、不複製任何密鑰、不自行呼叫統計函式。讀不到閘腳本時該掣自動隱藏。
 - **要關站或改入口**：只改 `web/index.html` 的設定（治理倉另有 `closed`／`iframe-only` 模式），並先評估現有用戶及備份；`iframe-only` 不可用於本機紀錄冊。決策與限制見 [`docs/adr/0005-entry-gate-whitelist.md`](docs/adr/0005-entry-gate-whitelist.md)。
 

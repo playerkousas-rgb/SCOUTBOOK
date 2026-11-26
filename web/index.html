@@ -19,9 +19,11 @@
         initStoreGate({
           appKey: 'scoutbook',
           mode: localDev ? 'open' : 'entry-gate',
-          // SG17／SG19：BOOK 類只需認 APP STORE 做入口；圖書館／成員系統靜默放行但唔畫掣。
+          // 唯一公開入口 = APP STORE。APP STORE 一落架，普通人就全部入唔到（呢個就係關站開關）。
+          // 成員系統係唯一例外：本身公開、又內置四本 BOOK，成員唔會冇路入；但卡上唔提、唔畫掣
+          // （silent = 照放行但唔顯示），免得白名單卡教普通人「可以由成員系統入」。
           portalIds: ['appstore'],
-          silentPortalIds: ['library', 'member'],
+          silentPortalIds: ['member'],
           // SG11-a：已加入主畫面嘅用戶、以及直接開網址嘅現有用戶照用（唔會鎖死自己嘅紀錄）。
           allowStandalone: true,
           autoRedirectSeconds: 0,

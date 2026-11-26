@@ -21,7 +21,7 @@ const OPTIONS = {
   appKey: 'scoutbook',
   mode: 'entry-gate',
   portalIds: ['appstore'],
-  silentPortalIds: ['library', 'member'],
+  silentPortalIds: ['member'],
   allowStandalone: true,
   autoRedirectSeconds: 0,
 };
@@ -82,9 +82,9 @@ function page(referrer = '', { pass = false, standalone = false } = {}) {
 }
 
 test('入口來源精確比對、靜默放行並保留工作階段', () => {
+  // 唯一公開入口 = APP STORE；成員系統係唯一例外（靜默放行，唔畫掣）
   for (const [origin, id] of [
     ['https://scoutappstore.vercel.app/', 'appstore'],
-    ['https://scout-circulars.vercel.app/', 'library'],
     ['https://member-portal-sigma-swart.vercel.app/books', 'member'],
   ]) {
     const p = page(origin);
@@ -93,8 +93,14 @@ test('入口來源精確比對、靜默放行並保留工作階段', () => {
     assert.equal(decision.matchedPortalId, id);
     assert.equal(p.values.get('scoutbook.store_pass'), '1');
   }
-  // 偽造前綴（appstore.vercel.app.evil.com）與未列入清單的入口一律攔截
-  for (const referrer of ['', 'https://scoutappstore.vercel.app.evil.com/', 'https://scout-district-portal.vercel.app/']) {
+  // 偽造前綴（appstore.vercel.app.evil.com）與未列入清單的入口一律攔截；
+  // 圖書館唔再係放行來源：APP STORE 落架就真係「普通人都入唔到」（見 ADR 0005 §落架開關）
+  for (const referrer of [
+    '',
+    'https://scoutappstore.vercel.app.evil.com/',
+    'https://scout-district-portal.vercel.app/',
+    'https://scout-circulars.vercel.app/',
+  ]) {
     assert.equal(gate.evaluateStoreGate(OPTIONS, { referrer }).allowed, false);
   }
   assert.equal(gate.initStoreGate(OPTIONS, page('', { pass: true }).win).reason, 'session-pass');
@@ -147,7 +153,12 @@ test('閘放在 HTML head、隨 PWA 離線快取，並避開 SPA rewrite', () =>
   assert.match(html, /mode: localDev \? 'open' : 'entry-gate'/);
   // 本機開發唔可以被自己的閘擋住（localhost／127.0.0.1 直接開放）
   assert.match(html, /\/\^\(localhost\|127\\\.0\\\.0\\\.1\|\\\[::1\\\]\)\$\//);
-  assert.match(html, /portalIds: \['appstore'\],[\s\S]{0,200}?silentPortalIds: \['library', 'member'\]/);
+  assert.match(html, /portalIds: \['appstore'\],[\s\S]{0,400}?silentPortalIds: \['member'\]/);
+  // 成員系統只放行、唔宣傳：index.html 唔可以出現成員系統網址或名稱（卡上亦唔會有第二粒掣）
+  assert.equal(/member-portal/.test(html), false);
+  assert.equal(/圖書館|通告圖書館/.test(html), false);
+  // 圖書館唔係放行來源：落架開關要「APP STORE 一落架，普通人都入唔到」
+  assert.equal(/['"]library['"]/.test(html), false);
   assert.match(html, /allowStandalone: true/);
   // 一般用家版本：白名單卡要即時安撫「紀錄唔會冇咗」，中英分開、唔並排
   assert.match(html, /customTitle: en \? 'Open this app from SCOUT APP STORE' : '需經由 SCOUT APP STORE 開啟'/);
@@ -198,6 +209,11 @@ test('閘檔案保持治理倉原樣（唔改閘邏輯，只改 App 設定）', 
   assert.ok(readme.includes('唔係擋技術人員'));
   const adr = fs.readFileSync('docs/adr/0005-entry-gate-whitelist.md', 'utf8');
   assert.ok(adr.includes('擋一般用家，唔係擋技術人員'));
+  // 落架開關：APP STORE 落架 → 普通人入唔到；成員系統係唯一安靜例外
+  assert.ok(adr.includes('落架開關：APP STORE 一落架，普通人就入唔到'));
+  assert.ok(adr.includes('卡上永不顯示'));
+  assert.ok(readme.includes('落架開關（呢個閘存在的理由）'));
+  assert.ok(readme.includes('由通告圖書館、區管理系統等其他網站進入 | 不放行'));
   assert.ok(adr.includes('fail-open'));
   // 唔准為咗「防技術人員」加後端驗票／反調試
   assert.equal(/\/api\/enter/.test(readme), false);

@@ -68,7 +68,7 @@
 | 題 | 定案 |
 |---|---|
 | 模式 | `entry-gate`（頂層跳板）。**不用** `iframe-only`（BOOK 類有本機長期儲存及 PWA，屬 SG2 禁區），亦不用 `closed` |
-| 入口 | `portalIds: ['appstore']`（SG17：BOOK 類只需認 APP STORE）；`silentPortalIds: ['library', 'member']`（SG19：照放行但唔畫掣） |
+| 入口 | `portalIds: ['appstore']`（唯一公開入口＝落架開關）；`silentPortalIds: ['member']`（成員系統係唯一例外：照放行但卡上唔提、唔畫掣；佢本身公開且已內置四本 BOOK）。圖書館／區管理系統／GEMINI 一律不作放行來源 |
 | 主畫面／直開 | `allowStandalone: true`（SG11-a）：已裝 PWA 及現有直開用戶照用，閘只攔新工作階段的直開 |
 | 閘檔案 | 治理倉 `templates/vercel/store_gate_v1.0.js` @ `6ebfdd72` 原樣複製到 `web/public/store_gate_v1.0.js`，App 只改設定 |
 | 讚好／收藏 | SG18：頂欄及歡迎頁各一粒，`ScoutStoreGate.getAppStoreUrl('scoutbook')` 開新分頁返主站詳情卡；零寫死網址、零跨倉密鑰 |

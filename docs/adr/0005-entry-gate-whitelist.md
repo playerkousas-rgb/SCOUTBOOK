@@ -25,7 +25,7 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
      appKey: 'scoutbook',
      mode: 'entry-gate',
      portalIds: ['appstore'],
-     silentPortalIds: ['library', 'member'],
+     silentPortalIds: ['member'],
      allowStandalone: true,
      autoRedirectSeconds: 0,
    });
@@ -33,13 +33,27 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
 
    - `appKey: 'scoutbook'`：工作階段通行證存於 `sessionStorage['scoutbook.store_pass']`，不寫入紀錄冊，亦不會與其他 BOOK 互通。
    - `portalIds: ['appstore']`：SG17 — BOOK 類只需認 APP STORE 做入口；分享連結／QR 由 APP STORE 產生（SG9）。
-   - `silentPortalIds: ['library', 'member']`：SG19 — 圖書館與成員系統的 `Referer` **照樣放行**，但攔截卡**只出 APP STORE 一粒掣**，避免用家唔知撳邊個。
+   - `silentPortalIds: ['member']`：成員系統是**唯一例外**——`Referer` 照樣放行，但**卡上唔提、唔畫掣**（silent）。原因見下節：成員系統本身公開，又已內置四本 BOOK，成員永遠有路入；但一旦把佢寫成白名單卡上的按鈕，普通人就會學到「可以由成員系統入」，落架開關即失效。圖書館**不列入**放行來源（與 VSBOOK 的 `['library','member']` 不同），令 APP STORE 落架後普通人真係入唔到；如日後想恢復圖書館引流，只在 `silentPortalIds` 加一個 `'library'` 即可。
    - `allowStandalone: true`：SG11-a — 已加入主畫面的用家、以及直接開網址的現有用戶，紀錄照用得；閘只擋「新開、無入口、無通行證」的工作階段。
    - `autoRedirectSeconds: 0`：不自動跳轉，用家自己揀（自動跳會令「我只是想開自己的紀錄冊」的用家失去控制）。
    - **本機開發例外**：`location.hostname` 為 `localhost`／`127.0.0.1`／`[::1]` 時用 `mode: 'open'`，否則 `entry-gate`。這是唯一一行與 VSBOOK 設定不同的地方 —— 唔加就 `npm run dev` 一開就被自己的閘擋住。Vercel Production／Preview 主機名不是 localhost，一律照行 `entry-gate`。
 4. **啟動保護**：`web/src/main.jsx` 只在 `document.documentElement` 沒有 `data-store-gated` 時才掛載 React 及註冊 PWA，避免先閃一閃紀錄冊或裝出一個打不開的主畫面圖示。
 5. **離線快取**：`web/public/sw.js` 把 `/store_gate_v1.0.js` 放入 `SHELL` 並以 cache-first 提供，令離線開 App 一樣判斷得到入口；`vercel.json` 的 SPA rewrite 明確排除該檔，避免被吞成 `index.html`。
 6. **讚好／收藏（SG18）**：新增 `web/src/components/StoreSupport.jsx`，網址由 `ScoutStoreGate.getAppStoreUrl('scoutbook')` 產生（零寫死網址、零跨倉密鑰），讀不到閘腳本時整粒掣隱藏。slug `scoutbook` 已對照主站 migration `20261116-app-slug-seed.sql`（`scoutbook-five.vercel.app → scoutbook`）。頂欄與歡迎頁各放一次，列印時隱藏。
+
+## 落架開關：APP STORE 一落架，普通人就入唔到
+
+用戶定案（2026-11-26）：保留入口白名單的真正目的，是日後「無人用就喺 APP STORE 落架」時，可以一次過令**普通人**用唔到，而唔需要改程式：
+
+| 動作 | 效果 |
+| :--- | :--- |
+| APP STORE 落架（Delist） | 白名單卡上的唯一按鈕失效（或入口消失）→ 普通人沒有入口，`entry-gate` 擋住直開 |
+| 成員系統（例外，靜默） | 本身公開、又內置四本 BOOK，成員仍可由 `/books` 內嵌或開啟 BOOK 進入；**卡上永不顯示**，所以不構成「公開後門」的宣傳 |
+| 已加入主畫面（`allowStandalone`） | 已裝用家照用 —— 佢哋手上有真實紀錄，唔可以因為落架而失去更新／匯出（SG11-a） |
+| 要連例外都關 | 改用 `mode: 'closed'`（維護卡）或 Vercel Pause；**落架前先叫用家匯出 JSON 備份** |
+| 不可用 | `iframe-only`（會踢走已裝主畫面用家，亦令儲存分家） |
+
+> 圖書館、區管理系統、GEMINI 一律**不是**本 App 的放行來源：任何一個公開入口都會令「落架＝普通人入唔到」失效。
 
 ## 與 ADR 0004（iframe 嵌入白名單）的關係
 
@@ -71,5 +85,5 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
 - **Fail-open 與 fail-closed 的分工**：閘腳本載入失敗（離線、舊快取、被攔截）時紀錄冊維持可用（不影響成員手上嘅紀錄）；但未知 `mode` 會 fail-closed，避免串錯字靜默開閘。
 - **新工作階段／新分頁**：`sessionStorage` 通行證不跨分頁繼承，可能再次見到白名單卡；由任一入口進入即可。
 - **`#v=` 分享連結**：若被攔截，返回主站會失去片段；領袖要先經入口進入，再重新開啟分享連結。
-- **`noreferrer` 入口**：入口連結若帶 `noreferrer`，`document.referrer` 為空 → 會被擋（治理倉 §4.4-1 已修圖書館；成員系統仍待修）。
+- **`noreferrer` 入口**：成員系統現時連結仍帶 `noreferrer`（清空 `Referer`），所以由 `/books` 直接跳入 BOOK 有機會被擋；成員可改為在成員系統內以內嵌方式使用 BOOK（同一頁 iframe），或先由 APP STORE 進入一次。治理倉 §4.4-11 有記錄。
 - **不可用此閘保護未備份的資料**：BOOK 類下架前仍須保留可達入口、開 `allowStandalone`、並先叫用家匯出 JSON 備份（SG11-a）。
