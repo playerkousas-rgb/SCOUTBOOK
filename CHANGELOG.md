@@ -12,7 +12,8 @@
 
 ### 文件（Docs）
 
-- 新增 [`docs/adr/0005-entry-gate-whitelist.md`](docs/adr/0005-entry-gate-whitelist.md)：記錄決策、與 ADR 0004 的分工（「被誰嵌入」vs「由哪裡開啟」）及如實限制——**閘是前端導流，不是身份驗證或安全邊界**，`/api/leader`、`/api/scoutbadge` 不受此閘保護。
+- 新增 [`docs/adr/0005-entry-gate-whitelist.md`](docs/adr/0005-entry-gate-whitelist.md)：記錄決策、與 ADR 0004 的分工（「被誰嵌入」vs「由哪裡開啟」）及如實限制——**設計目標是擋一般用家（誤傳連結／舊書籤／搜尋結果），不是擋技術人員**：改 `sessionStorage`、偽造 `Referer` 或自動化瀏覽器都繞得過，屬已知並接受，因此不另加後端驗票或反調試；`/api/leader`、`/api/scoutbadge` 不受此閘保護，另靠 `LEADER_CODE` 及純進度契約。
+- 白名單卡以 `customTitle`／`customMessage`（治理倉選項，不改閘邏輯）補上「已保存在這部裝置的紀錄不會被刪除」，中英分開，針對一般用家最擔心嘅「係唔係壞咗／紀錄冇咗」。
 - `README.md` 新增「指定入口白名單（Store Gate）」一節（放行表、私隱限制、離線及舊連結、`#v=` 分享連結、關站方法）；`docs/00-quickcard.md` 加入速查列及排障第 9 項；`SCOPE.md` 記錄白名單定案；`docs/adr/README.md` 補索引。
 
 ### 測試（Tests）

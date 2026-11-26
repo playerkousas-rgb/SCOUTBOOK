@@ -130,6 +130,13 @@ test('直接開啟顯示單一主站按鈕且不暴露底層', () => {
   assert.equal(actions.children[0].href, 'https://scoutappstore.vercel.app/');
   assert.equal(actions.children[0].target, '_top');
   assert.match(p.nodes.get('scoutStoreGateStyle').textContent, /body > :not\(#scoutStoreGate\).*display: none !important/);
+
+  // 檔嘅係一般用家：卡上自訂文案要即刻講清楚「紀錄冇被刪」，中英分開
+  const q = page();
+  gate.initStoreGate({ ...OPTIONS, customTitle: 'T', customMessage: 'M' }, q.win);
+  const custom = q.nodes.get('scoutStoreGate');
+  assert.equal(custom.children[1].textContent, 'T');
+  assert.equal(custom.children[2].textContent, 'M');
 });
 
 test('閘放在 HTML head、隨 PWA 離線快取，並避開 SPA rewrite', () => {
@@ -142,6 +149,13 @@ test('閘放在 HTML head、隨 PWA 離線快取，並避開 SPA rewrite', () =>
   assert.match(html, /\/\^\(localhost\|127\\\.0\\\.0\\\.1\|\\\[::1\\\]\)\$\//);
   assert.match(html, /portalIds: \['appstore'\],[\s\S]{0,200}?silentPortalIds: \['library', 'member'\]/);
   assert.match(html, /allowStandalone: true/);
+  // 一般用家版本：白名單卡要即時安撫「紀錄唔會冇咗」，中英分開、唔並排
+  assert.match(html, /customTitle: en \? 'Open this app from SCOUT APP STORE' : '需經由 SCOUT APP STORE 開啟'/);
+  assert.match(html, /紀錄不會被刪除/);
+  assert.match(html, /not deleted/);
+  // 前端零寫死入口網址（一律由治理倉註冊表提供）
+  const initBlock = html.slice(html.indexOf('initStoreGate({'), html.indexOf('</script>', html.indexOf('initStoreGate({')));
+  assert.equal(/https?:\/\//.test(initBlock), false);
   const sw = fs.readFileSync('web/public/sw.js', 'utf8');
   assert.match(sw, /'\/store_gate_v1\.0\.js'/);
   assert.match(fs.readFileSync('web/src/main.jsx', 'utf8'), /!document\.documentElement\.hasAttribute\('data-store-gated'\)/);
@@ -178,6 +192,14 @@ test('閘檔案保持治理倉原樣（唔改閘邏輯，只改 App 設定）', 
   assert.equal(/mode: 'iframe-only'/.test(fs.readFileSync('web/index.html', 'utf8')), false);
   // 閘只係前端導流，唔可以當安全邊界：文件要講明
   const readme = fs.readFileSync('README.md', 'utf8');
+  // 用戶定案：擋一般用家，唔係擋技術人員（唔可以日後偷偷改寫成「防線」）
   assert.ok(readme.includes('不是身份驗證或安全邊界'));
+  assert.ok(readme.includes('擋**一般用家**'));
+  assert.ok(readme.includes('唔係擋技術人員'));
+  const adr = fs.readFileSync('docs/adr/0005-entry-gate-whitelist.md', 'utf8');
+  assert.ok(adr.includes('擋一般用家，唔係擋技術人員'));
+  assert.ok(adr.includes('fail-open'));
+  // 唔准為咗「防技術人員」加後端驗票／反調試
+  assert.equal(/\/api\/enter/.test(readme), false);
   assert.ok(readme.includes('store_gate_v1.0.js'));
 });

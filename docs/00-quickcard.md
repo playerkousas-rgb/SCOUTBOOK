@@ -11,7 +11,7 @@
 | **互通格式** | `scoutbadge.pending.v1`（以 `scoutId` 對齊 `L1-*`…`L5-*`、`SC-*-*`；BOOK 鍵＝官方編號原文，零映射） |
 | **二維碼協定** | `SB1.<base64url(gzip(JSON))>`（壓縮優先）、`SB1P.`（未壓縮後備）、`SB1S.`（領袖核簽），上限 `2400` 字元 |
 | **服務平台嵌入** | `vercel.json` 回應 `Content-Security-Policy: frame-ancestors 'self' https://member-portal-sigma-swart.vercel.app`（無 `X-Frame-Options`）；平台 `<iframe>` 須帶 `allow="camera; clipboard-write"`；平台內資料與獨立版分開儲存，以備份 JSON 搬移 |
-| **入口白名單（Store Gate）** | `web/public/store_gate_v1.0.js`（治理倉原樣複製）＋ `web/index.html` 的 `initStoreGate({ appKey: 'scoutbook', mode: 'entry-gate', portalIds: ['appstore'], silentPortalIds: ['library', 'member'], allowStandalone: true })`；APP STORE 進入放行並記於 `sessionStorage['scoutbook.store_pass']`，圖書館／成員系統靜默放行，主畫面 PWA 豁免；直接開網址只出 APP STORE 一粒掣。**這是前端導流，不是安全邊界**，`/api/*` 不受此閘保護 |
+| **入口白名單（Store Gate）** | `web/public/store_gate_v1.0.js`（治理倉原樣複製）＋ `web/index.html` 的 `initStoreGate({ appKey: 'scoutbook', mode: 'entry-gate', portalIds: ['appstore'], silentPortalIds: ['library', 'member'], allowStandalone: true })`；APP STORE 進入放行並記於 `sessionStorage['scoutbook.store_pass']`，圖書館／成員系統靜默放行，主畫面 PWA 豁免；直接開網址只出 APP STORE 一粒掣。**呢個閘係擋一般用家（誤傳連結／舊書籤），唔係擋技術人員**：改 `sessionStorage` 或偽造 `Referer` 一定過得到（已知並接受），`/api/*` 亦不受此閘保護 |
 | **版權與聲明** | `Copyright © 2026 SCOUT SYSTEM — All Rights Reserved`（見 [`../LICENSE`](../LICENSE)）＋ 非官方獨立工具聲明，只出現於封面頁腳、數位附錄、選單「關於」 |
 
 ## 常用指令
@@ -38,4 +38,4 @@ node scripts/preflight_v1.0.mjs .                  # 開局與交付總閘門
 6. **同步後看不到服務紀錄**：服務紀錄不在 `load` 回應內，BOOK 會另外呼叫 `getServiceRecords` 並寫入第 109／110 頁。若該筆紀錄在 `scoutbadge` 內是「已拒絕」（`status: rejected`）或日期不是 `YYYY-MM-DD`（日期會留空但仍保留活動及時數），請先在 `scoutbadge` 修正；上游讀取失敗時同步只會缺少服務紀錄，進度照常更新。
 7. **在服務平台內看不到原有紀錄冊**：平台內（iframe）與獨立版分開儲存。到獨立版開啟選單 →「匯出備份」，再在平台內歡迎頁按「匯入備份」。iPhone／iPad 及 Safari 可能在關閉瀏覽器後清除平台內的資料，每次填寫後請匯出備份。
 8. **在服務平台內開不到相機**：檢查平台的 `<iframe>` 是否帶 `allow="camera"`，以及平台自身的 `Permissions-Policy` 有否禁用 `camera`；未修正前可用掃描頁的「貼上代碼」或開啟獨立版。
-9. **直接開網址見到「需經由 SCOUT APP STORE 開啟」**：這是入口白名單，不是資料損壞。按卡上的 APP STORE 按鈕（或由通告圖書館／成員系統）進入即可，同分頁會記住通行；已加入主畫面的圖示不受影響。新分頁／新工作階段可能要再經入口一次，`#v=` 分享連結亦要在進入後重新開啟。測試預覽（非 localhost 主機名）時，可在 Console 執行 `sessionStorage.setItem('scoutbook.store_pass','1')` 再重新載入，等同已由入口進入。
+9. **直接開網址見到「需經由 SCOUT APP STORE 開啟」**：這是入口白名單，不是資料損壞。按卡上的 APP STORE 按鈕（或由通告圖書館／成員系統）進入即可，同分頁會記住通行；已加入主畫面的圖示不受影響。新分頁／新工作階段可能要再經入口一次，`#v=` 分享連結亦要在進入後重新開啟。測試預覽（非 localhost 主機名）時，可在 Console 執行 `sessionStorage.setItem('scoutbook.store_pass','1')` 再重新載入，等同已由入口進入 —— 技術人員用同一招就繞過得到，屬設計上接受嘅範圍（見 ADR 0005）。

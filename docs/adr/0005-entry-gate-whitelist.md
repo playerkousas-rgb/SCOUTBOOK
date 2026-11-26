@@ -53,9 +53,21 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
 | 本機開發 | 無作用（Vite dev 不套用 `vercel.json` 標頭） | `localhost`／`127.0.0.1` 自動用 `open` |
 | 可否當安全邊界 | 是（瀏覽器強制） | **否**（前端導流，可被繞過） |
 
+## 設計目標：擋一般用家，唔係擋技術人員
+
+用戶定案（2026-11-26）：「我係擋普通人唔係技術人員。」本閘只負責「唔好令人誤打誤撞由唔應該嘅入口入」，唔係防線：
+
+- **要擋嘅人**：收到轉發連結、開舊書籤／搜尋結果、唔知要由 APP STORE 入嘅一般成員同家長。佢哋見到提示卡會按掣去 APP STORE，唔會識改 `sessionStorage` 或偽造 `Referer`。
+- **唔打算擋嘅人**：識用 DevTools 嘅技術人員。改 `sessionStorage['scoutbook.store_pass'] = '1'`、自行設定 `Referer`、或用自動化瀏覽器都入得到；**呢點係已知並接受**。所以：
+  - 唔加後端 `/api/enter` 驗票、唔加簽名 Cookie、唔加反調試／代碼混淆（依 SG12：唔為「防抄」過度工程）；
+  - 閘腳本載入失敗時 **fail-open**，寧願放行都唔好鎖死用家手上嘅紀錄；
+  - 真正嘅資產（紀錄冊）本來就喺用戶自己部機，繞過閘只係「唔經入口用」，唔等於資料外洩或可以改到別人嘅資料。
+- **仍然要守嘅部分**：`/api/leader`（`LEADER_CODE`，`crypto.timingSafeEqual`）同 scoutbadge 純進度契約照舊運作，**唔靠**呢個閘；將來若有收費或敏感資料，另設後端驗票。
+- **卡片文案要照顧一般用家**：一般用家最擔心「係唔係壞咗／啲紀錄冇咗」。所以 `web/index.html` 以 `customTitle`／`customMessage`（治理倉支援的選項，唔改閘邏輯）補一句「已保存在這部裝置的紀錄不會被刪除」，並按 `localStorage['scoutbook.lang']` 分中英，避免中英並排；卡上仍只有一粒 APP STORE 掣（SG19）。
+
 ## 誠實限制
 
-- **不是身份驗證或安全邊界。** `Referer` 可以偽造、`sessionStorage` 可以用 DevTools 改；`/api/leader` 與 `/api/scoutbadge` **不受此閘保護**（本身另有 `LEADER_CODE` 及純進度契約）。敏感資料、收費功能須另設後端驗票。
+- **不是身份驗證或安全邊界。** 技術人員可以偽造 `Referer`、改 `sessionStorage`（見上節，屬接受範圍）；`/api/leader` 與 `/api/scoutbadge` **不受此閘保護**（本身另有 `LEADER_CODE` 及純進度契約）。
 - **Fail-open 與 fail-closed 的分工**：閘腳本載入失敗（離線、舊快取、被攔截）時紀錄冊維持可用（不影響成員手上嘅紀錄）；但未知 `mode` 會 fail-closed，避免串錯字靜默開閘。
 - **新工作階段／新分頁**：`sessionStorage` 通行證不跨分頁繼承，可能再次見到白名單卡；由任一入口進入即可。
 - **`#v=` 分享連結**：若被攔截，返回主站會失去片段；領袖要先經入口進入，再重新開啟分享連結。
