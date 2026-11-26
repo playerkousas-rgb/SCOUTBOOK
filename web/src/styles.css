@@ -2666,6 +2666,36 @@ html[data-print-preview] .write--multi.is-empty {
   justify-content: space-between;
   gap: 12px;
 }
+.welcome__topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* SG18：讚好／收藏（連回 SCOUT APP STORE 詳情卡，零寫死網址、零跨倉請求） */
+.store-support {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--foil-soft);
+  font-size: 11px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.store-support--paper { color: var(--scout-green); }
+.store-support[hidden] { display: none; }
+.store-support:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (max-width: 430px) {
+  .chipbar .store-support span:last-child { display: none; }
+  .welcome__topbar { gap: 4px; }
+  .welcome__topbar .store-support { padding: 0 4px; font-size: 10px; }
+}
+@media print { .store-support { display: none !important; } }
+
 .coverart__title--en {
   font-size: clamp(24px, 4.4vw, 34px);
   letter-spacing: 0.16em;

@@ -2,13 +2,13 @@
 
 > **童軍支部個人隨身離線電子紀錄冊** —— 逐頁對應香港童軍總會《童軍紀錄冊》及 2026 年修訂版《童軍訓練綱要》，支援就地打字／手寫簽名、一鍵生成及列印 `PT/18`・`P120A1`・`P120A2` 官方表格、成員⇄領袖純離線二維碼核簽，以及與 `scoutbadge` 旅團進度表的**純進度、零個人資料**雙向同步。
 
-- **目前版本**：`v2.1.5`（2026-11-20；修正 scoutbadge 服務紀錄未能同步到第 109／110 頁的問題，見 [CHANGELOG.md](CHANGELOG.md)）
+- **目前版本**：`v2.2.0`（2026-11-26；按治理倉及 VSBOOK 做法加入「指定入口白名單（Store Gate）」及讚好／收藏掣，見 [CHANGELOG.md](CHANGELOG.md)）
 - **架構形態**：離線優先 PWA（React + Vite + Service Worker，`localStorage` 本機儲存，零帳號、零雲端上傳；可選配 Vercel `/api/leader` 與 `/api/scoutbadge` 伺服器端接口）
 - **設計主題**：對齊 `CUBSBOOK` `v1.0.2`／`VSBOOK` `v1.0.0`／`ROVERBOOK` `v16` 的介面、安全區與版權規範，改用**童軍綠布面**封面（`#143b28 → #08180f` × 燙金 `#e3c07a`／`#f6e6bb` × 象牙內頁 `#f7f2e7`）；重點按鈕及進度條同樣用童軍綠。金字只准配深綠（10.06:1），金底按鈕一律深炭字（10.67:1）；手寫墨及蓋印一律深童軍綠，會員章／總領袖獎章／制服圖版用官方裁圖（`web/public/official/`）並保留原印顏色，確保 WCAG AA（見 [`docs/design-review.md`](docs/design-review.md)）。
 - **一句話**：BOOK 是「這一位成員」的口袋紀錄冊；全團名冊、批量簽核、多成員切換一律留在 `scoutbadge`。
 - **獨立優先**：BOOK **不接 scoutbadge 亦 100% 可用** —— 逐頁填寫、簽名、官方表格、A4 列印、離線二維碼、JSON 備份全部在本機完成。`scoutbadge` 只是「可選」的免重打同步；純靜態主機（無 `/api`）會自動顯示「獨立模式」，紀錄冊本身的功能一項不少。唯一需要連線的是 **scoutbadge 進度檔**的匯出／匯入：必須先在「數位附錄」連接並登入 scoutbadge（完整紀錄冊備份與還原不受影響）。
 
-> 目前狀態：`v2.1.5`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
+> 目前狀態：`v2.2.0`（官方 110 頁 1:1 重排已於 `v2.0.0` 完成，路由 `/p/p001`–`/p/p110`；紙本對照見 [`docs/paper-mapping.md`](docs/paper-mapping.md)，設計案見 [`docs/v2-110-plan.md`](docs/v2-110-plan.md)）。**真機三寬度（390／768／1440）及實機列印仍未測**，不作聲稱；`v2.1.1` 的 scoutbadge 同步卡只在沙盒的無頭 Chromium 以模擬旅團清單驗證過 320–1440 闊度，並非真機（見 [`docs/design-review.md`](docs/design-review.md) ROUND 4）。
 
 ---
 
@@ -99,6 +99,36 @@ Content-Security-Policy: frame-ancestors 'self' https://member-portal-sigma-swar
 
 **把獨立版的舊資料搬入平台**：在獨立版開啟選單 →「匯出備份」下載 JSON → 在服務平台內開啟 SCOUTBOOK → 歡迎頁按「匯入備份」選取該檔案。反方向相同。平台如使用 `sandbox`，須列出 `allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads`。決策背景見 [`docs/adr/0004-portal-iframe-embedding.md`](docs/adr/0004-portal-iframe-embedding.md)。
 
+### 指定入口白名單（Store Gate）
+
+依治理真理倉 `playerkousas-rgb/readme` 的 SG1–SG19 及 `VSBOOK` `v1.0.7` 做法，SCOUTBOOK 採**頂層跳板 `entry-gate`**（**不用** `iframe-only`：`iframe` 會令儲存分家，已加入主畫面的用家亦會被踢走）。閘檔案 `web/public/store_gate_v1.0.js` 由治理倉 `templates/vercel/store_gate_v1.0.js` **原樣複製**（commit `6ebfdd72a1ea5a5e83df4a6644fc66d0236df98e`），App 只在 `web/index.html` 傳入設定：
+
+```js
+initStoreGate({
+  appKey: 'scoutbook',
+  mode: localDev ? 'open' : 'entry-gate',       // 本機開發（localhost）直接開放
+  portalIds: ['appstore'],                       // SG17：BOOK 類只需認 APP STORE
+  silentPortalIds: ['library', 'member'],        // SG19：照放行，但唔畫掣
+  allowStandalone: true,                         // SG11-a：已裝主畫面／現有用戶照用
+  autoRedirectSeconds: 0,
+});
+```
+
+| 情況 | 結果 |
+| :--- | :--- |
+| 由 SCOUT APP STORE 進入 | 放行，並在本分頁以 `sessionStorage['scoutbook.store_pass']` 記住通行 |
+| 由通告圖書館／成員系統進入 | 放行（靜默入口，不顯示按鈕） |
+| 已加入主畫面（standalone PWA） | 直接放行；紀錄照用 |
+| 直接開啟網址（新工作階段、無入口） | 顯示白名單提示卡，只有一粒「前往 APP STORE」按鈕；**不**自動跳轉 |
+| 離線開啟 | 閘檔案在 Service Worker 的 `SHELL` 內，照樣判斷得到；紀錄冊功能不變 |
+| 本機開發（`npm run dev`） | `localhost`／`127.0.0.1` 自動用 `mode: 'open'`，不會被自己的閘擋住；Vercel Production／Preview 仍行 `entry-gate` |
+
+- **私隱和限制**：這是前端導流，**不是身份驗證或安全邊界**；`Referer` 可被偽造、`sessionStorage` 可被改動，`/api/leader` 與 `/api/scoutbadge` **不受此閘保護**。閘腳本載入失敗時紀錄冊維持可用（fail-open），不會因為載入唔到而鎖死用家的紀錄。
+- **離線及舊連結**：新分頁／新工作階段可能沒有通行紀錄而再見白名單卡，由任一入口進入即可；直接 `#v=` 分享連結若被攔截，返回主站會失去片段，領袖要先經入口進入再重新開啟分享連結。已安裝的舊版需先連網更新，才會快取到閘檔案。
+- **成員系統**：保留 ADR 0004 的 iframe CSP 與分割儲存設計；若入口連結帶 `noreferrer`（清空 `Referer`），或瀏覽器／私隱設定抑制來源，會被擋或重整後要重新經入口 —— 這不會刪除原有資料。
+- **讚好／收藏（SG18）**：頂欄及歡迎頁各有一粒「讚好／收藏」，只以 `ScoutStoreGate.getAppStoreUrl('scoutbook')` 開新分頁返回 APP STORE 詳情卡（slug 對照主站 `20261116-app-slug-seed.sql` 核實）；**不**直連主站資料庫、不複製任何密鑰、不自行呼叫統計函式。讀不到閘腳本時該掣自動隱藏。
+- **要關站或改入口**：只改 `web/index.html` 的設定（治理倉另有 `closed`／`iframe-only` 模式），並先評估現有用戶及備份；`iframe-only` 不可用於本機紀錄冊。決策與限制見 [`docs/adr/0005-entry-gate-whitelist.md`](docs/adr/0005-entry-gate-whitelist.md)。
+
 ### 正式網址與圖標更新
 
 - **本 app 正式網址**：`https://scoutbook-five.vercel.app/`（`index.html` 的 `canonical`、`og:url`、`og:image` 三者必須同源，測試會檢查）。
@@ -140,7 +170,7 @@ Content-Security-Policy: frame-ancestors 'self' https://member-portal-sigma-swar
 | [docs/design-review.md](docs/design-review.md) | 視覺基準與巡檢紀錄 |
 | [docs/column-layout-check.png](docs/column-layout-check.png) | v2.1.0 欄寬規格示意圖（量度結果 ＋ 各寬度實際 px，由 `scripts/render_column_spec.py` 產生） |
 | [docs/p1-research.md](docs/p1-research.md) | P1 研發前調查（相近產品、自己方案、未核實項） |
-| [docs/adr/README.md](docs/adr/README.md) | 架構決策紀錄（0001 技術棧、0002 二維碼與版權、0003 scoutbadge 進度檔須先連接、0004 服務平台 iframe 嵌入白名單） |
+| [docs/adr/README.md](docs/adr/README.md) | 架構決策紀錄（0001 技術棧、0002 二維碼與版權、0003 scoutbadge 進度檔須先連接、0004 服務平台 iframe 嵌入白名單、0005 指定入口白名單） |
 | [docs/out-of-scope/README.md](docs/out-of-scope/README.md) | 明確不做事項 |
 | [scripts/README.md](scripts/README.md) | 守衛與產生器腳本說明 |
 

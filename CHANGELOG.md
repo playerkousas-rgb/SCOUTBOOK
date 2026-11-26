@@ -1,5 +1,25 @@
 # CHANGELOG.md — 版本變更紀錄
 
+## [v2.2.0] — 2026-11-26
+
+### 新增（Added · 指定入口白名單 Store Gate）
+
+- 依治理真理倉 `playerkousas-rgb/readme` 的 SG1–SG19 及 `VSBOOK` `v1.0.7` 做法，加入**頂層跳板入口白名單**：`web/public/store_gate_v1.0.js` 由治理倉 `templates/vercel/store_gate_v1.0.js`（commit `6ebfdd72a1ea5a5e83df4a6644fc66d0236df98e`）**原樣複製**，App 只在 `web/index.html` 的 `<head>` 以 `initStoreGate()` 傳入設定（`appKey: 'scoutbook'`、`mode: 'entry-gate'`、`portalIds: ['appstore']`、`silentPortalIds: ['library', 'member']`、`allowStandalone: true`、`autoRedirectSeconds: 0`）。本機 `localhost`／`127.0.0.1` 自動改用 `mode: 'open'`，令 `npm run dev` 不會被自己的閘擋住；Vercel Production／Preview 不受影響（仍行 `entry-gate`）。
+- **放行規則**：由 SCOUT APP STORE 進入會放行，並於本分頁記住通行（`sessionStorage['scoutbook.store_pass']`）；通告圖書館及成員系統為靜默入口，`Referer` 照樣放行但攔截卡不顯示其按鈕（SG19）；已加入主畫面的 PWA 及現有直開用戶照用（SG11-a）；直接開網址的新工作階段顯示白名單提示卡，只有一粒「前往 APP STORE」按鈕，**不自動跳轉**。
+- **不用 `iframe-only`**：BOOK 有本機長期儲存及 PWA，屬 SG2 禁區（iframe 內儲存分家、會踢走已裝主畫面的用家）。ADR 0004 的 `frame-ancestors` 服務平台嵌入白名單**維持不變**，兩者並存。
+- **啟動與離線**：`web/src/main.jsx` 只在未被閘攔截時掛載 React 及註冊 PWA（避免先閃紀錄冊或裝出打不開的圖示）；`web/public/sw.js` 把閘檔案放入 `SHELL` 並以 cache-first 提供；`vercel.json` 的 SPA rewrite 明確排除該檔，避免被吞成 `index.html`。
+- **讚好／收藏（SG18）**：新增 `web/src/components/StoreSupport.jsx`，頂欄及歡迎頁各放一次，只以 `ScoutStoreGate.getAppStoreUrl('scoutbook')` 開新分頁返回 APP STORE 詳情卡（slug 對照主站 `20261116-app-slug-seed.sql`）；零寫死網址、不直連主站資料庫、不複製任何密鑰；讀不到閘腳本時自動隱藏，列印時不顯示。
+
+### 文件（Docs）
+
+- 新增 [`docs/adr/0005-entry-gate-whitelist.md`](docs/adr/0005-entry-gate-whitelist.md)：記錄決策、與 ADR 0004 的分工（「被誰嵌入」vs「由哪裡開啟」）及如實限制——**閘是前端導流，不是身份驗證或安全邊界**，`/api/leader`、`/api/scoutbadge` 不受此閘保護。
+- `README.md` 新增「指定入口白名單（Store Gate）」一節（放行表、私隱限制、離線及舊連結、`#v=` 分享連結、關站方法）；`docs/00-quickcard.md` 加入速查列及排障第 9 項；`SCOPE.md` 記錄白名單定案；`docs/adr/README.md` 補索引。
+
+### 測試（Tests）
+
+- 新增 `tests/store_gate.test.mjs`（6 項）：入口來源精確比對（含 `.evil.com` 前綴偽造）、靜默放行、工作階段通行、主畫面豁免、`sessionStorage` 被封鎖時仍可進入但重整要再經入口、直接開啟只出單一 APP STORE 按鈕且遮罩不露出底層、閘檔案位置／SW 快取／SPA rewrite 排除、SG18 slug 與列印隱藏，以及「閘檔案保持治理倉原樣」。
+- Service Worker 快取升至 `scoutbook-cache-v9`；四處版本號同步至 `v2.2.0`（`package.json`、`shared/book.js` `APP_VERSION`、`web/index.html` meta、`web/public/sw.js` `CACHE_NAME`）及 `package-lock.json`。
+
 ## [v2.1.5] — 2026-11-20
 
 ### 修正（Fixed · scoutbadge 服務紀錄同步後看不到）

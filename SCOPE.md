@@ -58,3 +58,19 @@
 | Q8 三寬度實測 | 用戶未能實測；交付標示「機器驗證通過，真機待測」 |
 | Q9 官方表格 | `PT/18`＋`P120A1`＋`P120A2`（自動帶入＋A4 列印） |
 | Q10 可見性 | public repo ＋專有授權（跟家族） |
+
+---
+
+## 入口白名單定案（2026-11-26，用戶指示「參閱 VSBOOK 做法」）
+
+依治理真理倉 `playerkousas-rgb/readme` 的 SG1–SG19，並照 `VSBOOK` `v1.0.7` 的做法：
+
+| 題 | 定案 |
+|---|---|
+| 模式 | `entry-gate`（頂層跳板）。**不用** `iframe-only`（BOOK 類有本機長期儲存及 PWA，屬 SG2 禁區），亦不用 `closed` |
+| 入口 | `portalIds: ['appstore']`（SG17：BOOK 類只需認 APP STORE）；`silentPortalIds: ['library', 'member']`（SG19：照放行但唔畫掣） |
+| 主畫面／直開 | `allowStandalone: true`（SG11-a）：已裝 PWA 及現有直開用戶照用，閘只攔新工作階段的直開 |
+| 閘檔案 | 治理倉 `templates/vercel/store_gate_v1.0.js` @ `6ebfdd72` 原樣複製到 `web/public/store_gate_v1.0.js`，App 只改設定 |
+| 讚好／收藏 | SG18：頂欄及歡迎頁各一粒，`ScoutStoreGate.getAppStoreUrl('scoutbook')` 開新分頁返主站詳情卡；零寫死網址、零跨倉密鑰 |
+| 邊界 | 前端導流，**不是安全邊界**；`/api/leader`、`/api/scoutbadge` 不受此閘保護 |
+| 與 iframe 白名單關係 | 並存：ADR 0004 管「被誰嵌入」，ADR 0005 管「由哪裡開啟」 |

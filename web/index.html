@@ -2,15 +2,34 @@
 <html lang="zh-Hant-HK">
   <head>
     <meta charset="utf-8" />
+    <!-- 指定入口白名單（Store Gate）：喺 React 掛載前先判斷來源，唔會先閃一閃紀錄冊 -->
+    <script src="/store_gate_v1.0.js"></script>
+    <script>
+      // 本機開發（localhost／127.0.0.1）用 'open'，避免開發時被自己的閘擋住；
+      // 其餘（Vercel Production／Preview）一律 'entry-gate'。
+      var localDev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+      if (typeof initStoreGate === 'function') {
+        initStoreGate({
+          appKey: 'scoutbook',
+          mode: localDev ? 'open' : 'entry-gate',
+          // SG17／SG19：BOOK 類只需認 APP STORE 做入口；圖書館／成員系統靜默放行但唔畫掣。
+          portalIds: ['appstore'],
+          silentPortalIds: ['library', 'member'],
+          // SG11-a：已加入主畫面嘅用戶、以及直接開網址嘅現有用戶照用（唔會鎖死自己嘅紀錄）。
+          allowStandalone: true,
+          autoRedirectSeconds: 0,
+        });
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="copyright" content="© SCOUT SYSTEM" />
-    <meta name="app-version" content="v2.1.5" />
+    <meta name="app-version" content="v2.2.0" />
     <meta name="application-name" content="SCOUTBOOK" />
     <meta
       name="description"
-      content="SCOUTBOOK — 童軍個人隨身離線電子紀錄冊（v2.1.5）。逐頁對應《童軍紀錄冊》第 1–110 頁、附錄及 2026 年童軍訓練綱要，支援手寫簽名、PT/18・P120A1・P120A2 自動填表列印與離線二維碼核簽。"
+      content="SCOUTBOOK — 童軍個人隨身離線電子紀錄冊（v2.2.0）。逐頁對應《童軍紀錄冊》第 1–110 頁、附錄及 2026 年童軍訓練綱要，支援手寫簽名、PT/18・P120A1・P120A2 自動填表列印與離線二維碼核簽。"
     />
-    <title>SCOUTBOOK · 童軍紀錄冊 v2.1.5</title>
+    <title>SCOUTBOOK · 童軍紀錄冊 v2.2.0</title>
 
     <!-- G11 圖標標準：5 條 link + 4 條 meta，全部 PNG／ICO（不准 SVG） -->
     <link rel="icon" href="/icons/favicon-v2.ico" sizes="any" />
@@ -37,7 +56,7 @@
     <meta name="apple-mobile-web-app-title" content="SCOUTBOOK" />
     <meta name="mobile-web-app-capable" content="yes" />
     <script>
-      window.APP_VERSION = 'v2.1.5';
+      window.APP_VERSION = 'v2.2.0';
       try {
         var savedLang = localStorage.getItem('scoutbook.lang');
         document.documentElement.setAttribute('data-lang', savedLang === 'en' ? 'en' : 'zh');
@@ -52,7 +71,7 @@
         id="app-boot"
         style="padding:24px;min-height:100dvh;color:#f6e6bb;background:#143b28;font-family:system-ui,sans-serif;text-align:center"
       >
-        SCOUTBOOK v2.1.5 · 童軍電子紀錄冊
+        SCOUTBOOK v2.2.0 · 童軍電子紀錄冊
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>
