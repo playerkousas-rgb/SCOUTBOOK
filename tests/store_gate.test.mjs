@@ -137,12 +137,9 @@ test('直接開啟顯示單一主站按鈕且不暴露底層', () => {
   assert.equal(actions.children[0].target, '_top');
   assert.match(p.nodes.get('scoutStoreGateStyle').textContent, /body > :not\(#scoutStoreGate\).*display: none !important/);
 
-  // 檔嘅係一般用家：卡上自訂文案要即刻講清楚「紀錄冇被刪」，中英分開
-  const q = page();
-  gate.initStoreGate({ ...OPTIONS, customTitle: 'T', customMessage: 'M' }, q.win);
-  const custom = q.nodes.get('scoutStoreGate');
-  assert.equal(custom.children[1].textContent, 'T');
-  assert.equal(custom.children[2].textContent, 'M');
+  // 卡片沿用治理倉預設文案（SG19 簡短人話版），同其他 App 一致，唔加自訂字句
+  assert.equal(overlay.children[1].textContent, '需經由 SCOUT APP STORE 開啟');
+  assert.equal(overlay.children[2].textContent, '請按下方按鈕前往 APP STORE 開啟。');
 });
 
 test('閘放在 HTML head、隨 PWA 離線快取，並避開 SPA rewrite', () => {
@@ -160,10 +157,9 @@ test('閘放在 HTML head、隨 PWA 離線快取，並避開 SPA rewrite', () =>
   // 圖書館唔係放行來源：落架開關要「APP STORE 一落架，普通人都入唔到」
   assert.equal(/['"]library['"]/.test(html), false);
   assert.match(html, /allowStandalone: true/);
-  // 一般用家版本：白名單卡要即時安撫「紀錄唔會冇咗」，中英分開、唔並排
-  assert.match(html, /customTitle: en \? 'Open this app from SCOUT APP STORE' : '需經由 SCOUT APP STORE 開啟'/);
-  assert.match(html, /紀錄不會被刪除/);
-  assert.match(html, /not deleted/);
+  // 唔加自訂卡片文案：一律用治理倉預設（落架後撳掣都去唔到 APP STORE，自然入唔到）
+  assert.equal(/customTitle|customMessage/.test(html), false);
+  assert.equal(/紀錄不會被刪除|not deleted/i.test(html), false);
   // 前端零寫死入口網址（一律由治理倉註冊表提供）
   const initBlock = html.slice(html.indexOf('initStoreGate({'), html.indexOf('</script>', html.indexOf('initStoreGate({')));
   assert.equal(/https?:\/\//.test(initBlock), false);

@@ -47,7 +47,7 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
 
 | 動作 | 效果 |
 | :--- | :--- |
-| APP STORE 落架（Delist） | 白名單卡上的唯一按鈕失效（或入口消失）→ 普通人沒有入口，`entry-gate` 擋住直開 |
+| APP STORE 落架（Delist） | 卡上唯一按鈕帶去 APP STORE 亦搵唔到本 App → 普通人沒有入口，`entry-gate` 擋住直開（卡上唔需要額外文案） |
 | 成員系統（例外，靜默） | 本身公開、又內置四本 BOOK，成員仍可由 `/books` 內嵌或開啟 BOOK 進入；**卡上永不顯示**，所以不構成「公開後門」的宣傳 |
 | 已加入主畫面（`allowStandalone`） | 已裝用家照用 —— 佢哋手上有真實紀錄，唔可以因為落架而失去更新／匯出（SG11-a） |
 | 要連例外都關 | 改用 `mode: 'closed'`（維護卡）或 Vercel Pause；**落架前先叫用家匯出 JSON 備份** |
@@ -77,7 +77,7 @@ BOOK 系列（`SCOUTBOOK`／`CUBSBOOK`／`VSBOOK`／`ROVERBOOK`）用家手上�
   - 閘腳本載入失敗時 **fail-open**，寧願放行都唔好鎖死用家手上嘅紀錄；
   - 真正嘅資產（紀錄冊）本來就喺用戶自己部機，繞過閘只係「唔經入口用」，唔等於資料外洩或可以改到別人嘅資料。
 - **仍然要守嘅部分**：`/api/leader`（`LEADER_CODE`，`crypto.timingSafeEqual`）同 scoutbadge 純進度契約照舊運作，**唔靠**呢個閘；將來若有收費或敏感資料，另設後端驗票。
-- **卡片文案要照顧一般用家**：一般用家最擔心「係唔係壞咗／啲紀錄冇咗」。所以 `web/index.html` 以 `customTitle`／`customMessage`（治理倉支援的選項，唔改閘邏輯）補一句「已保存在這部裝置的紀錄不會被刪除」，並按 `localStorage['scoutbook.lang']` 分中英，避免中英並排；卡上仍只有一粒 APP STORE 掣（SG19）。
+- **卡片文案一律用治理倉預設**（SG19 簡短人話版：「需經由 SCOUT APP STORE 開啟」／「請按下方按鈕前往 APP STORE 開啟。」），與其他 App 完全一致，**不**加 `customTitle`／`customMessage`。用戶定案（2026-11-26）：「唔洗係卡片寫，就好似其他 APP 甘指番去 APP STORE，佢去到 APP STORE 發現落左架咪入唔到」—— 落架後撳掣去 APP STORE 都搵唔到本 App，普通人自然入唔到，卡上唔需要額外解釋。
 
 ## 誠實限制
 

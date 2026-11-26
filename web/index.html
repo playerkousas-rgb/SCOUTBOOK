@@ -8,13 +8,6 @@
       // 本機開發（localhost／127.0.0.1）用 'open'，避免開發時被自己的閘擋住；
       // 其餘（Vercel Production／Preview）一律 'entry-gate'。
       var localDev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-      var savedLang = null;
-      try {
-        savedLang = localStorage.getItem('scoutbook.lang');
-      } catch (e) {
-        savedLang = null;
-      }
-      var en = savedLang === 'en';
       if (typeof initStoreGate === 'function') {
         initStoreGate({
           appKey: 'scoutbook',
@@ -27,11 +20,8 @@
           // SG11-a：已加入主畫面嘅用戶、以及直接開網址嘅現有用戶照用（唔會鎖死自己嘅紀錄）。
           allowStandalone: true,
           autoRedirectSeconds: 0,
-          // 擋嘅係一般用家：最重要的係即刻講清楚「紀錄冇被刪」，唔好令佢以為壞咗。
-          customTitle: en ? 'Open this app from SCOUT APP STORE' : '需經由 SCOUT APP STORE 開啟',
-          customMessage: en
-            ? 'Tap the button below to open this app from SCOUT APP STORE. The records already saved on this device are not deleted — open it this way and they will still be here.'
-            : '請按下方按鈕前往 APP STORE 開啟。你已填寫、保存在這部裝置的紀錄不會被刪除，經入口入返就照樣見到。',
+          // 卡片文案用治理倉預設（SG19 簡短人話版），同其他 App 一致，唔加自訂字句。
+          // 落架後撳「前往 APP STORE」都搵唔到呢個 App，普通人自然入唔到。
         });
       }
     </script>
